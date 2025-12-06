@@ -1,4 +1,4 @@
-@import './utils/variables.css';
+@import '../utils/variables.css';
 
 .video-info-container {
   background-color: var(--card-bg);

@@ -1,4 +1,4 @@
-@import './utils/variables.css';
+@import '../utils/variables.css';
 
 .download-queue-container {
   background-color: var(--card-bg);

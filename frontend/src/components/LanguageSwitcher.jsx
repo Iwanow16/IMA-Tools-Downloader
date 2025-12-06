@@ -2,7 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLanguage } from '../contexts/LanguageContext'
 import { FaGlobe, FaCheck } from 'react-icons/fa'
-import '../styles/LanguageSwitcher.css'
+import '../styles/components/LanguageSwitcher.css'
 
 const LanguageSwitcher = () => {
   const { t } = useTranslation()

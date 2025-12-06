@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
 import config from '../utils/config'
+import '../styles/components/VideoInfo.css'
 import { 
   FaDownload, 
   FaVideo, 

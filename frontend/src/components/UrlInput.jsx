@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
 import config from '../utils/config'
 import { FaSearch, FaVideo, FaGlobe, FaInfoCircle } from 'react-icons/fa'
+import '../styles/components/UrlInput.css'
 
 const UrlInput = () => {
   const { t } = useTranslation()

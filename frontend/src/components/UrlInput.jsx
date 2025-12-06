@@ -83,7 +83,7 @@ const UrlInput = () => {
         {detectedService && (
           <div className="detected-service" style={{ borderColor: detectedService.color }}>
             <detectedService.icon className="service-icon" style={{ color: detectedService.color }} />
-            <span>{t('urlInput.detectedService', { service: detectedService.name })}</span>
+            <span>{t('urlInput.detectedService').replace('{service}', detectedService.name)}</span>
           </div>
         )}
       </div>

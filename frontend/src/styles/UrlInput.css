@@ -1,0 +1,138 @@
+.url-input-container {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.url-input-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.youtube-icon {
+  color: var(--primary-color);
+  font-size: 2.5rem;
+}
+
+.url-input-header h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.url-input-description {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.url-input-form {
+  margin-bottom: 1.5rem;
+}
+
+.url-input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.url-input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  background-color: var(--secondary-color);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+}
+
+.url-input.error {
+  border-color: var(--error-color);
+}
+
+.url-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.url-submit-button {
+  padding: 1rem 2rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.url-submit-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+.url-submit-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.url-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.error-message {
+  color: var(--error-color);
+  background-color: rgba(244, 67, 54, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: calc(var(--border-radius) / 2);
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  border-left: 3px solid var(--error-color);
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: calc(var(--border-radius) / 2);
+  margin-top: 1rem;
+}
+
+.loading-indicator .spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.instructions {
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: calc(var(--border-radius) / 2);
+  border: 1px dashed var(--border-color);
+}
+
+.instructions p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+}

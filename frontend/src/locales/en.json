@@ -1,0 +1,100 @@
+{
+  "app": {
+    "title": "Universal Video Downloader",
+    "description": "Download videos from supported platforms",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning"
+  },
+  "urlInput": {
+    "placeholder": "Paste video URL from any supported service...",
+    "button": "Analyze",
+    "invalidUrl": "Please enter a valid video URL from supported services",
+    "fetching": "Fetching video info...",
+    "instructions": "Enter a video link from any supported platform",
+    "detectedService": "Detected: {service}"
+  },
+  "videoInfo": {
+    "title": "Title",
+    "author": "Author/Channel",
+    "duration": "Duration",
+    "formats": "Available Formats",
+    "quality": "Quality",
+    "extension": "Format",
+    "size": "Size",
+    "download": "Download",
+    "selectFormat": "Select Format",
+    "noFormats": "No formats available",
+    "startingDownload": "Starting download...",
+    "platform": "Platform"
+  },
+  "downloadQueue": {
+    "title": "Download Queue",
+    "active": "Active Downloads",
+    "completed": "Completed",
+    "failed": "Failed",
+    "status": {
+      "pending": "Pending",
+      "downloading": "Downloading",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "progress": "Progress",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "downloadAgain": "Download Again",
+    "noTasks": "No download tasks",
+    "clearCompleted": "Clear Completed",
+    "timeRemaining": "Time remaining",
+    "speed": "Speed",
+    "platform": "Platform"
+  },
+  "language": {
+    "english": "English",
+    "russian": "Русский",
+    "switch": "Switch Language"
+  },
+  "errors": {
+    "network": "Network error. Please check your connection.",
+    "server": "Server error. Please try again later.",
+    "quota": "Download quota exceeded. Try again later.",
+    "size": "Video exceeds maximum allowed size",
+    "duration": "Video exceeds maximum allowed duration",
+    "invalid": "Invalid video URL or video is unavailable",
+    "unsupported": "This service is not yet supported. Supported services: {services}"
+  },
+  "notifications": {
+    "addedToQueue": "Added to download queue",
+    "downloadStarted": "Download started",
+    "downloadComplete": "Download complete",
+    "downloadFailed": "Download failed",
+    "taskCancelled": "Download cancelled",
+    "queueFull": "Queue is full. Please wait for current downloads to complete."
+  },
+  "services": {
+    "supportedServices": "Supported Services",
+    "allServices": "All Supported Platforms",
+    "count": "{count} platforms supported",
+    "clickToCopy": "Click to copy domain",
+    "copied": "Domain copied!",
+    "serviceDetails": {
+      "youtube": "YouTube - Videos, shorts, live streams",
+      "vimeo": "Vimeo - High quality videos",
+      "dailymotion": "Dailymotion - Video sharing platform",
+      "twitter": "Twitter/X - Video tweets",
+      "instagram": "Instagram - Reels, IGTV, posts",
+      "tiktok": "TikTok - Short videos",
+      "twitch": "Twitch - Live streams, clips",
+      "rutube": "Rutube - Russian video platform",
+      "vk": "VK Video - Social network videos"
+    }
+  },
+  "stats": {
+    "totalDownloads": "Total Downloads",
+    "activeDownloads": "Active Downloads",
+    "queueLength": "Queue Length",
+    "supportedPlatforms": "Supported Platforms"
+  }
+}

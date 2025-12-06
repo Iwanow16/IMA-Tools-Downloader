@@ -1,0 +1,150 @@
+import React, { createContext, useState, useContext, useCallback } from 'react';
+import { downloadAPI } from '../services/api';
+
+const DownloadContext = createContext();
+
+export const useDownload = () => {
+  const context = useContext(DownloadContext);
+  if (!context) {
+    throw new Error('useDownload must be used within DownloadProvider');
+  }
+  return context;
+};
+
+export const DownloadProvider = ({ children }) => {
+  const [tasks, setTasks] = useState([]);
+  const [videoInfo, setVideoInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedFormat, setSelectedFormat] = useState(null);
+
+  // Fetch video info
+  const fetchVideoInfo = useCallback(async (url) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const info = await downloadAPI.getVideoInfo(url);
+      setVideoInfo(info);
+      setSelectedFormat(info.formats?.[0] || null);
+      return info;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Start download
+  const startDownload = useCallback(async (url, formatId, quality) => {
+    try {
+      const response = await downloadAPI.startDownload(url, formatId, quality);
+
+      const newTask = {
+        id: response.taskId,
+        url,
+        formatId,
+        quality,
+        status: 'pending',
+        progress: 0,
+        filename: null,
+        error: null,
+        createdAt: new Date().toISOString(),
+        estimatedTime: null,
+        downloadSpeed: null
+      };
+
+      setTasks((prev) => [...prev, newTask]);
+      return newTask;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, []);
+
+  // Update task
+  const updateTask = useCallback((taskId, updates) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, ...updates } : task
+      )
+    );
+  }, []);
+
+  // Cancel task
+  const cancelTask = useCallback(
+    async (taskId) => {
+      try {
+        await downloadAPI.cancelTask(taskId);
+        updateTask(taskId, { status: 'cancelled' });
+      } catch (err) {
+        setError(err.message);
+        throw err;
+      }
+    },
+    [updateTask]
+  );
+
+  // Remove task
+  const removeTask = useCallback((taskId) => {
+    setTasks((prev) => prev.filter((task) => task.id !== taskId));
+  }, []);
+
+  // Clear completed tasks
+  const clearCompleted = useCallback(() => {
+    setTasks((prev) =>
+      prev.filter(
+        (task) => task.status !== 'completed' && task.status !== 'failed'
+      )
+    );
+  }, []);
+
+  // Refresh tasks from server
+  const refreshTasks = useCallback(async () => {
+    try {
+      const serverTasks = await downloadAPI.getTasks();
+
+      setTasks((prev) => {
+        const updated = [...prev];
+
+        serverTasks.forEach((serverTask) => {
+          const idx = updated.findIndex((t) => t.id === serverTask.id);
+
+          if (idx >= 0) {
+            updated[idx] = { ...updated[idx], ...serverTask };
+          } else {
+            updated.push(serverTask);
+          }
+        });
+
+        return updated;
+      });
+    } catch (err) {
+      console.error('Failed to refresh tasks:', err);
+    }
+  }, []);
+
+  const value = {
+    tasks,
+    videoInfo,
+    loading,
+    error,
+    selectedFormat,
+    setSelectedFormat,
+    fetchVideoInfo,
+    startDownload,
+    updateTask,
+    cancelTask,
+    removeTask,
+    clearCompleted,
+    refreshTasks,
+    setError
+  };
+
+  return (
+    <DownloadContext.Provider value={value}>
+      {children}
+    </DownloadContext.Provider>
+  );
+};

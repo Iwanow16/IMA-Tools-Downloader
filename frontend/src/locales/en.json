@@ -63,7 +63,7 @@
     "size": "Video exceeds maximum allowed size",
     "duration": "Video exceeds maximum allowed duration",
     "invalid": "Invalid video URL or video is unavailable",
-    "unsupported": "This service is not yet supported. Supported services: {services}"
+    "unsupported": "This service is not supported."
   },
   "notifications": {
     "addedToQueue": "Added to download queue",

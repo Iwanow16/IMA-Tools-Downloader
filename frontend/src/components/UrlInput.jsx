@@ -27,8 +27,7 @@ const UrlInput = () => {
     
     const service = detectService(inputUrl)
     if (!service) {
-      const serviceNames = config.supportedServices.map(s => s.name).join(', ')
-      return t('errors.unsupported', { services: serviceNames })
+      return t('errors.unsupported')
     }
     
     return ''

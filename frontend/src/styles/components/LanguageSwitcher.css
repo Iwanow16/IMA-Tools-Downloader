@@ -199,3 +199,25 @@
     display: inline;
   }
 }
+
+.language-switcher:hover .language-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.language-switcher:hover .language-chevron {
+  transform: rotate(180deg);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .language-switcher:hover .language-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+  }
+  
+  .language-switcher:hover .language-chevron {
+    transform: rotate(0);
+  }
+}

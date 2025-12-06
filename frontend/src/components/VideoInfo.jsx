@@ -1,8 +1,16 @@
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
-import { FaDownload, FaVideo, FaMusic, FaInfoCircle, FaCheck } from 'react-icons/fa'
-import '../styles/VideoInfo.css'
+import config from '../utils/config'
+import '../styles/components/VideoInfo.css'
+import { 
+  FaDownload, 
+  FaVideo, 
+  FaMusic, 
+  FaInfoCircle, 
+  FaCheck,
+  FaGlobe
+} from 'react-icons/fa'
 
 const VideoInfo = () => {
   const { t } = useTranslation()
@@ -36,11 +44,17 @@ const VideoInfo = () => {
     }
   }, [videoInfo, tasks])
 
+  const detectedService = useMemo(() => {
+    if (!videoInfo || !videoInfo.url) return null
+    return config.validation.getServiceByUrl(videoInfo.url)
+  }, [videoInfo])
+
   if (!videoInfo || loading) {
     return null
   }
 
   const formatDuration = (seconds) => {
+    if (!seconds) return '--:--'
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = Math.floor(seconds % 60)
@@ -52,6 +66,7 @@ const VideoInfo = () => {
   }
 
   const formatFileSize = (bytes) => {
+    if (!bytes) return 'Unknown size'
     if (bytes === 0) return '0 Bytes'
     const k = 1024
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -86,11 +101,27 @@ const VideoInfo = () => {
   return (
     <div className="video-info-container">
       <div className="video-info-header">
-        <FaInfoCircle className="info-icon" />
-        <h3>{t('videoInfo.formats')}</h3>
+        <div className="header-left">
+          <FaInfoCircle className="info-icon" />
+          <h3>{t('videoInfo.formats')}</h3>
+        </div>
+        
+        {detectedService && (
+          <div className="platform-badge" style={{ backgroundColor: detectedService.color }}>
+            <FaGlobe className="platform-icon" />
+            <span>{detectedService.name}</span>
+          </div>
+        )}
       </div>
 
       <div className="video-metadata">
+        <div className="metadata-item">
+          <span className="metadata-label">{t('videoInfo.platform')}:</span>
+          <span className="metadata-value">
+            {detectedService ? detectedService.name : 'Unknown'}
+          </span>
+        </div>
+        
         <div className="metadata-item">
           <span className="metadata-label">{t('videoInfo.title')}:</span>
           <span className="metadata-value" title={videoInfo.title}>
@@ -98,10 +129,12 @@ const VideoInfo = () => {
           </span>
         </div>
         
-        <div className="metadata-item">
-          <span className="metadata-label">{t('videoInfo.author')}:</span>
-          <span className="metadata-value">{videoInfo.author}</span>
-        </div>
+        {videoInfo.author && (
+          <div className="metadata-item">
+            <span className="metadata-label">{t('videoInfo.author')}:</span>
+            <span className="metadata-value">{videoInfo.author}</span>
+          </div>
+        )}
         
         {videoInfo.duration && (
           <div className="metadata-item">
@@ -128,19 +161,17 @@ const VideoInfo = () => {
                 
                 <div className="format-details">
                   <div className="format-quality">
-                    {format.quality || format.resolution || 'Unknown'}
+                    {format.quality || format.resolution || 'Unknown quality'}
                   </div>
                   
                   <div className="format-info">
                     <span className="format-extension">
-                      {format.ext?.toUpperCase()}
+                      {format.ext?.toUpperCase() || 'Unknown'}
                     </span>
                     
-                    {format.filesize && (
-                      <span className="format-size">
-                        {formatFileSize(format.filesize)}
-                      </span>
-                    )}
+                    <span className="format-size">
+                      {formatFileSize(format.filesize)}
+                    </span>
                   </div>
                   
                   {format.note && (
@@ -161,11 +192,11 @@ const VideoInfo = () => {
             <div className="selected-format-info">
               {selectedFormat && (
                 <>
-                  <span>{t('videoInfo.selectedFormat')}: </span>
+                  <span>{t('videoInfo.selectFormat')}: </span>
                   <strong>
                     {selectedFormat.quality || selectedFormat.resolution} • 
                     {selectedFormat.ext?.toUpperCase()} • 
-                    {selectedFormat.filesize ? formatFileSize(selectedFormat.filesize) : 'Unknown size'}
+                    {formatFileSize(selectedFormat.filesize)}
                   </strong>
                 </>
               )}
@@ -184,7 +215,7 @@ const VideoInfo = () => {
               ) : downloaded ? (
                 <>
                   <FaDownload />
-                  <span>Download Again</span>
+                  <span>{t('downloadQueue.downloadAgain')}</span>
                 </>
               ) : (
                 <>

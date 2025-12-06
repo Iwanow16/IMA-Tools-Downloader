@@ -1,0 +1,270 @@
+@import '../utils/variables.css';
+
+.supported-services-container {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  animation: slideInUp 0.3s ease 0.2s both;
+}
+
+.services-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.services-header h3 {
+  font-size: var(--font-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.services-count {
+  background-color: var(--primary-color);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  min-width: 60px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Services Grid */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.service-card {
+  background-color: var(--secondary-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  border-left: 4px solid;
+  border-left-color: var(--service-color, var(--primary-color));
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  height: 100%;
+}
+
+.service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--service-color, var(--primary-color));
+}
+
+.service-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.service-icon {
+  font-size: var(--font-2xl);
+  color: var(--service-color, var(--primary-color));
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+}
+
+.service-info {
+  flex: 1;
+}
+
+.service-name {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  line-height: 1.2;
+}
+
+.service-description {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Service Domains */
+.service-domains {
+  flex: 1;
+}
+
+.domains-title {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.domains-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.domain-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  border: 1px solid transparent;
+}
+
+.domain-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--service-color, var(--primary-color));
+  transform: translateX(4px);
+}
+
+.domain-text {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: var(--font-xs);
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.copy-icon {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  transition: var(--transition-normal);
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-icon.success {
+  color: var(--success-color);
+}
+
+.domain-item:hover .copy-icon:not(.success) {
+  color: var(--service-color, var(--primary-color));
+}
+
+/* Service Footer */
+.service-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+
+.service-example {
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.external-icon {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  transition: var(--transition-normal);
+}
+
+.service-card:hover .external-icon {
+  color: var(--service-color, var(--primary-color));
+  transform: translateX(2px);
+}
+
+/* Services Footer */
+.services-footer {
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.services-note {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0 var(--spacing-md);
+}
+
+/* Service Color Classes */
+.service-youtube .service-card { --service-color: #FF0000; }
+.service-vimeo .service-card { --service-color: #1ab7ea; }
+.service-dailymotion .service-card { --service-color: #0066dc; }
+.service-twitter .service-card { --service-color: #1DA1F2; }
+.service-instagram .service-card { --service-color: #E4405F; }
+.service-tiktok .service-card { --service-color: #000000; }
+.service-twitch .service-card { --service-color: #9146FF; }
+.service-rutube .service-card { --service-color: #FF5A00; }
+.service-vk .service-card { --service-color: #4C75A3; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .supported-services-container {
+    padding: var(--spacing-lg);
+  }
+  
+  .services-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .service-card {
+    padding: var(--spacing-md);
+  }
+  
+  .service-header {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: center;
+    gap: var(--spacing-sm);
+  }
+  
+  .service-icon {
+    align-self: center;
+  }
+  
+  .service-info {
+    text-align: center;
+  }
+}

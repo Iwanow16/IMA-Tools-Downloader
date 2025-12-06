@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
 import ProgressBar from './ProgressBar'
-import '../styles/DownloadQueue.css'
+import '../styles/components/DownloadQueue.css'
 
 import { 
   FaTrash, 

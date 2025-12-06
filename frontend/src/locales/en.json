@@ -80,15 +80,7 @@
     "clickToCopy": "Click to copy domain",
     "copied": "Domain copied!",
     "serviceDetails": {
-      "youtube": "YouTube - Videos, shorts, live streams",
-      "vimeo": "Vimeo - High quality videos",
-      "dailymotion": "Dailymotion - Video sharing platform",
-      "twitter": "Twitter/X - Video tweets",
-      "instagram": "Instagram - Reels, IGTV, posts",
-      "tiktok": "TikTok - Short videos",
-      "twitch": "Twitch - Live streams, clips",
-      "rutube": "Rutube - Russian video platform",
-      "vk": "VK Video - Social network videos"
+      "youtube": "YouTube - Videos, shorts, live streams"
     }
   },
   "stats": {

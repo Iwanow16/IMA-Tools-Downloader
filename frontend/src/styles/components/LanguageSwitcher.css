@@ -1,0 +1,201 @@
+@import '../utils/variables.css';
+
+.language-switcher {
+  position: relative;
+  display: inline-block;
+  z-index: var(--z-dropdown);
+}
+
+.language-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--secondary-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  min-width: 120px;
+  justify-content: space-between;
+}
+
+.language-button:hover {
+  background-color: var(--secondary-light);
+  border-color: var(--primary-color);
+}
+
+.language-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+}
+
+.language-button-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.globe-icon {
+  color: var(--primary-color);
+  font-size: var(--font-base);
+}
+
+.language-chevron {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  transition: var(--transition-normal);
+}
+
+.language-switcher.open .language-chevron {
+  transform: rotate(180deg);
+}
+
+/* Language Dropdown */
+.language-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-xs);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 160px;
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: var(--transition-normal);
+  overflow: hidden;
+}
+
+.language-switcher.open .language-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.language-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  font-size: var(--font-sm);
+  text-align: left;
+  gap: var(--spacing-sm);
+}
+
+.language-option:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.language-option.active {
+  background-color: rgba(255, 0, 0, 0.1);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.language-flag {
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.language-name {
+  flex: 1;
+}
+
+.check-icon {
+  color: var(--primary-color);
+  font-size: var(--font-sm);
+  flex-shrink: 0;
+}
+
+/* Language Divider */
+.language-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 0;
+}
+
+/* Language Switcher with Flags */
+.language-switcher.flags .language-button-content {
+  gap: var(--spacing-md);
+}
+
+.language-switcher.flags .language-option {
+  gap: var(--spacing-md);
+}
+
+/* Compact variant */
+.language-switcher.compact .language-button {
+  min-width: auto;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.language-switcher.compact .language-name {
+  display: none;
+}
+
+.language-switcher.compact .language-option .language-name {
+  display: block;
+}
+
+/* RTL Support */
+.language-switcher.rtl .language-dropdown {
+  right: auto;
+  left: 0;
+}
+
+.language-switcher.rtl .language-button {
+  flex-direction: row-reverse;
+}
+
+.language-switcher.rtl .language-option {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+/* Accessibility */
+.language-switcher:focus-within .language-button {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+}
+
+.language-option:focus {
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .language-switcher {
+    width: 100%;
+  }
+  
+  .language-button {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .language-dropdown {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .language-switcher.compact .language-name {
+    display: inline;
+  }
+}

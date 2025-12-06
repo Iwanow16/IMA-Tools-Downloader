@@ -1,5 +1,5 @@
 import React from 'react'
-import '../styles/ProgressBar.css'
+import '../styles/components/ProgressBar.css'
 
 const ProgressBar = ({ progress = 0, height = 8, showLabel = true }) => {
   const clampedProgress = Math.min(100, Math.max(0, progress))

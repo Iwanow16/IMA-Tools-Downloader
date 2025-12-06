@@ -80,15 +80,7 @@
     "clickToCopy": "Нажмите, чтобы скопировать домен",
     "copied": "Домен скопирован!",
     "serviceDetails": {
-      "youtube": "YouTube - Видео, shorts, трансляции",
-      "vimeo": "Vimeo - Видео высокого качества",
-      "dailymotion": "Dailymotion - Платформа для обмена видео",
-      "twitter": "Twitter/X - Видео в твитах",
-      "instagram": "Instagram - Reels, IGTV, посты",
-      "tiktok": "TikTok - Короткие видео",
-      "twitch": "Twitch - Прямые трансляции, клипы",
-      "rutube": "Rutube - Российская видео-платформа",
-      "vk": "VK Video - Видео из социальной сети"
+      "youtube": "YouTube - Видео, shorts, трансляции"
     }
   },
   "stats": {

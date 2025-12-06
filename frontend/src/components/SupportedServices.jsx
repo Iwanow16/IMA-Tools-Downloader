@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import config from '../utils/config'
+import '../styles/components/SupportedServices.css'
 import {
   FaYoutube,
   FaCopy,
@@ -36,7 +37,7 @@ const SupportedServices = () => {
       <div className="services-header">
         <h3>{t('services.supportedServices')}</h3>
         <span className="services-count">
-          {t('services.count', { count: config.supportedServices.length })}
+          {t('services.count').replace('{count}', config.supportedServices.length)}
         </span>
       </div>
 
@@ -63,7 +64,9 @@ const SupportedServices = () => {
               </div>
 
               <div className="service-domains">
-                <div className="domains-title">{t('urlInput.detectedService', { service: service.name })}</div>
+                <div className="domains-title">
+                  {t('urlInput.detectedService')?.replace('{service}', service.name)}
+                </div>
                 <div className="domains-list">
                   {service.domains.map((domain, idx) => (
                     <div 
@@ -99,8 +102,7 @@ const SupportedServices = () => {
 
       <div className="services-footer">
         <p className="services-note">
-          More platforms are being added regularly. 
-          All downloads comply with platform terms of service.
+          {t('app.description')}
         </p>
       </div>
     </div>

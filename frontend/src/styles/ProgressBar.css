@@ -1,41 +1,193 @@
+@import './utils/variables.css';
+
 .progress-bar-container {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .progress-bar {
   flex: 1;
   background-color: var(--secondary-color);
-  border-radius: 10px;
+  border-radius: var(--radius-full);
   overflow: hidden;
   position: relative;
+  height: 8px;
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, var(--primary-color), #ff4444);
-  border-radius: 10px;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+  border-radius: var(--radius-full);
   transition: width 0.3s ease;
   position: relative;
+  height: 100%;
   min-width: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: var(--spacing-sm);
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: var(--radius-full);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .progress-text {
+  color: white;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   position: absolute;
   right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
 .progress-label {
   min-width: 40px;
   text-align: right;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: var(--font-xs);
+  font-weight: 700;
   color: var(--text-primary);
+}
+
+/* Size Variants */
+.progress-bar-sm .progress-bar {
+  height: 4px;
+}
+
+.progress-bar-md .progress-bar {
+  height: 8px;
+}
+
+.progress-bar-lg .progress-bar {
+  height: 12px;
+}
+
+.progress-bar-xl .progress-bar {
+  height: 16px;
+}
+
+/* Color Variants */
+.progress-bar-primary .progress-fill {
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+}
+
+.progress-bar-success .progress-fill {
+  background: linear-gradient(90deg, var(--success-color), #66BB6A);
+}
+
+.progress-bar-warning .progress-fill {
+  background: linear-gradient(90deg, var(--warning-color), #FFB74D);
+}
+
+.progress-bar-error .progress-fill {
+  background: linear-gradient(90deg, var(--error-color), #EF5350);
+}
+
+.progress-bar-info .progress-fill {
+  background: linear-gradient(90deg, var(--info-color), #42A5F5);
+}
+
+/* Striped Variant */
+.progress-bar-striped .progress-fill {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+  from {
+    background-position: 1rem 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* Indeterminate */
+.progress-bar-indeterminate .progress-bar {
+  overflow: visible;
+}
+
+.progress-bar-indeterminate .progress-fill {
+  width: 30% !important;
+  animation: indeterminate 1.5s infinite ease-in-out;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/* With Tooltip */
+.progress-bar-tooltip {
+  position: relative;
+}
+
+.progress-bar-tooltip:hover::after {
+  content: attr(data-progress) '%';
+  position: absolute;
+  top: -30px;
+  left: var(--progress-percent, 0%);
+  transform: translateX(-50%);
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  z-index: var(--z-tooltip);
+}
+
+.progress-bar-tooltip:hover::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: var(--progress-percent, 0%);
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--border-color);
+  z-index: var(--z-tooltip);
 }

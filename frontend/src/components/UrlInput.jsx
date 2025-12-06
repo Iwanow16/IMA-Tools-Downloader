@@ -2,16 +2,20 @@ import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
 import config from '../utils/config'
-import { FaSearch, FaYoutube } from 'react-icons/fa'
-import '../styles/UrlInput.css'
+import { FaSearch, FaVideo, FaGlobe, FaInfoCircle } from 'react-icons/fa'
 
 const UrlInput = () => {
   const { t } = useTranslation()
   const { fetchVideoInfo, loading, error, setError } = useDownload()
   const [url, setUrl] = useState('')
   const [localError, setLocalError] = useState('')
+  const [detectedService, setDetectedService] = useState(null)
 
-  const validateYouTubeUrl = (inputUrl) => {
+  const detectService = (inputUrl) => {
+    return config.validation.getServiceByUrl(inputUrl)
+  }
+
+  const validateVideoUrl = (inputUrl) => {
     if (!inputUrl.trim()) {
       return t('urlInput.invalidUrl')
     }
@@ -20,8 +24,10 @@ const UrlInput = () => {
       return 'URL is too long'
     }
     
-    if (!config.validation.youtubeRegex.test(inputUrl)) {
-      return t('urlInput.invalidUrl')
+    const service = detectService(inputUrl)
+    if (!service) {
+      const serviceNames = config.supportedServices.map(s => s.name).join(', ')
+      return t('errors.unsupported', { services: serviceNames })
     }
     
     return ''
@@ -32,7 +38,7 @@ const UrlInput = () => {
     setLocalError('')
     setError(null)
 
-    const validationError = validateYouTubeUrl(url)
+    const validationError = validateVideoUrl(url)
     if (validationError) {
       setLocalError(validationError)
       return
@@ -49,9 +55,13 @@ const UrlInput = () => {
     const value = e.target.value
     setUrl(value)
     
+    // Detect service in real-time
+    const service = detectService(value)
+    setDetectedService(service)
+    
     // Clear error when user starts typing
     if (localError) {
-      const validationError = validateYouTubeUrl(value)
+      const validationError = validateVideoUrl(value)
       if (!validationError) {
         setLocalError('')
       }
@@ -61,22 +71,35 @@ const UrlInput = () => {
   return (
     <div className="url-input-container">
       <div className="url-input-header">
-        <FaYoutube className="youtube-icon" />
-        <h2>{t('app.title')}</h2>
+        <FaVideo className="video-icon" />
+        <div className="header-content">
+          <h2>{t('app.title')}</h2>
+          <p className="app-subtitle">{t('app.description')}</p>
+        </div>
       </div>
-      
-      <p className="url-input-description">{t('app.description')}</p>
+
+      <div className="service-detection">
+        {detectedService && (
+          <div className="detected-service" style={{ borderColor: detectedService.color }}>
+            <detectedService.icon className="service-icon" style={{ color: detectedService.color }} />
+            <span>{t('urlInput.detectedService', { service: detectedService.name })}</span>
+          </div>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="url-input-form">
         <div className="url-input-group">
-          <input
-            type="text"
-            value={url}
-            onChange={handleInputChange}
-            placeholder={t('urlInput.placeholder')}
-            className={`url-input ${localError ? 'error' : ''}`}
-            disabled={loading}
-          />
+          <div className="input-wrapper">
+            <FaGlobe className="input-icon" />
+            <input
+              type="text"
+              value={url}
+              onChange={handleInputChange}
+              placeholder={t('urlInput.placeholder')}
+              className={`url-input ${localError ? 'error' : ''}`}
+              disabled={loading}
+            />
+          </div>
           
           <button
             type="submit"
@@ -96,7 +119,8 @@ const UrlInput = () => {
 
         {(localError || error) && (
           <div className="error-message">
-            {localError || error}
+            <FaInfoCircle className="error-icon" />
+            <span>{localError || error}</span>
           </div>
         )}
 
@@ -109,6 +133,7 @@ const UrlInput = () => {
       </form>
 
       <div className="instructions">
+        <FaInfoCircle className="info-icon" />
         <p>{t('urlInput.instructions')}</p>
       </div>
     </div>

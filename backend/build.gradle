@@ -1,0 +1,71 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
+}
+
+dependencies {
+	// implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	// testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    
+	// Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    
+    // Database
+    runtimeOnly 'com.h2database:h2'
+    
+    // Utilities
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'commons-io:commons-io:2.15.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // Logging
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+    
+    // YAML parsing
+    implementation 'org.yaml:snakeyaml:2.2'
+    
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-core:5.8.0'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+tasks.named('bootJar') {
+    archiveFileName = 'ima-downloader-backend.jar'
+}
+
+tasks.named('jar') {
+    enabled = false
+}
+
+springBoot {
+    buildInfo()
+}

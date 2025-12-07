@@ -1,0 +1,131 @@
+# Main application configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+spring:
+  application:
+    name: ima-downloader-backend
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 10GB
+      max-request-size: 10GB
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: true
+  datasource:
+    url: jdbc:h2:file:./data/downloader_db;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ${DB_PASSWORD:password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+
+app:
+  version: 1.0.0
+  environment: dev
+  temp-dir: /app/temp
+  output-dir: /app/downloads
+  log-dir: /app/logs
+  config-dir: /app/config
+
+downloader:
+  # General settings
+  max-concurrent-downloads: 5
+  max-queue-size: 100
+  download-timeout-minutes: 60
+  
+  # Paths
+  yt-dlp-path: /usr/local/bin/yt-dlp
+  ffmpeg-path: /usr/local/bin/ffmpeg
+  
+  # Cleanup
+  cleanup-enabled: true
+  cleanup-interval-hours: 6
+  temp-file-max-age-hours: 24
+  completed-file-max-age-days: 30
+  
+  # Security
+  rate-limit-per-ip: 20
+  rate-limit-window-minutes: 1
+  allowed-domains:
+    - youtube.com
+    - youtu.be
+  
+  # Quality defaults
+  default-quality: best
+  default-audio-quality: 192k
+  enable-subtitles: false
+  enable-thumbnail: true
+  
+  # Service configurations
+  services:
+    youtube:
+      enabled: true
+      max-duration: 120 # minutes
+      max-size: 2048 # MB
+      output-template: "%(title)s [%(id)s].%(ext)s"
+    vimeo:
+      enabled: true
+      max-duration: 60
+      max-size: 1024
+    tiktok:
+      enabled: true
+      max-duration: 10
+      max-size: 500
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    com.imatools: INFO
+    org.springframework.web: INFO
+    org.hibernate: WARN
+    org.hibernate.SQL: DEBUG
+  file:
+    name: /app/logs/application.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+      base-path: /manage
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+    shutdown:
+      enabled: false
+  info:
+    env:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

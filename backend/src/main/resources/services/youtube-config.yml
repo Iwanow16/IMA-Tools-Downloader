@@ -1,0 +1,45 @@
+service:
+  id: youtube
+  name: youtube
+  displayName: YouTube
+  description: Download videos from YouTube
+  icon: https://www.youtube.com/favicon.ico
+  enabled: true
+  domains:
+    - youtube.com
+    - youtu.be
+    - m.youtube.com
+    - youtube-nocookie.com
+  formats:
+    - mp4
+    - webm
+    - m4a
+    - mp3
+  maxDuration: 720 # 12 hours in minutes
+  maxSize: 8192 # 8GB in MB
+  extractorClass: com.example.backend.service.extractor.YoutubeExtractor
+  processorClass: com.example.backend.service.processor.YoutubeProcessor
+  ytDlpOptions: |
+    --no-playlist
+    --no-part
+    --embed-thumbnail
+    --embed-metadata
+    --convert-subs srt
+  outputTemplate: "%(title)s [%(id)s].%(ext)s"
+  supportsPlaylist: true
+  supportsSubtitles: true
+  supportsThumbnail: true
+  rateLimitPerHour: 100
+  qualityPresets:
+    - id: best
+      name: Best Quality
+      description: Best available quality
+    - id: 1080
+      name: 1080p
+      description: Full HD (1920x1080)
+    - id: 720
+      name: 720p
+      description: HD (1280x720)
+    - id: audio
+      name: Audio Only
+      description: MP3 audio file

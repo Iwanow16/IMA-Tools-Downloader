@@ -1,6 +1,7 @@
 package com.iwanow16.backend.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.OffsetDateTime;
 
@@ -23,6 +24,9 @@ public class TaskStatusDto {
     private OffsetDateTime failedAt;
     private String error;
     private Long fileSize;
+
+    @JsonIgnore
+    private String clientIp;
 
     public TaskStatusDto() {}
 
@@ -56,4 +60,6 @@ public class TaskStatusDto {
     public void setError(String error) { this.error = error; }
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+    public String getClientIp() { return clientIp; }
+    public void setClientIp(String clientIp) { this.clientIp = clientIp; }
 }

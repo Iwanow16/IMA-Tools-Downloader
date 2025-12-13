@@ -45,6 +45,7 @@ public class DownloadQueueService {
         t.setProgress(0);
         t.setFormatId(formatId);
         t.setQuality(quality);
+        t.setClientIp(clientIp);
         t.setCreatedAt(OffsetDateTime.now());
         tasks.put(id, t);
 
@@ -91,17 +92,24 @@ public class DownloadQueueService {
         }
     }
 
-    public TaskStatusDto getTask(String id) {
-        return tasks.get(id);
+    public TaskStatusDto getTask(String id, String clientIp) {
+        TaskStatusDto t = tasks.get(id);
+        if (t != null && !t.getClientIp().equals(clientIp)) {
+            return null; // Access denied: task belongs to different client
+        }
+        return t;
     }
 
-    public List<TaskStatusDto> getQueueStatus() {
-        return tasks.values().stream().toList();
+    public List<TaskStatusDto> getQueueStatus(String clientIp) {
+        return tasks.values().stream()
+                .filter(task -> task.getClientIp().equals(clientIp))
+                .toList();
     }
 
-    public void cancelTask(String taskId) {
-        // Not implemented: would track Process and kill it
+    public void cancelTask(String taskId, String clientIp) {
         TaskStatusDto t = tasks.get(taskId);
-        if (t != null) t.setStatus("cancelled");
+        if (t != null && t.getClientIp().equals(clientIp)) {
+            t.setStatus("cancelled");
+        }
     }
 }

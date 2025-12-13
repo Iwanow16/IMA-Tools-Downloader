@@ -27,6 +27,16 @@ public class DownloadController {
     @Autowired
     private FileStorageService storage;
 
+    private String getClientIp(HttpServletRequest request) {
+        // Check X-Forwarded-For header (for proxied requests)
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        // Fallback to remote address
+        return request.getRemoteAddr();
+    }
+
     @GetMapping("/info")
     public ResponseEntity<ApiResponseDto<VideoInfoDto>> info(@RequestParam String url) {
         try {
@@ -39,7 +49,7 @@ public class DownloadController {
 
     @PostMapping("/download")
     public ResponseEntity<ApiResponseDto<TaskStatusDto>> download(@RequestBody DownloadRequestDto req, HttpServletRequest request) {
-        String ip = request.getRemoteAddr();
+        String ip = getClientIp(request);
         // basic validation
         if (req.getUrl() == null || req.getUrl().length() > 1000) {
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Invalid URL", 400));
@@ -50,28 +60,41 @@ public class DownloadController {
     }
 
     @GetMapping("/tasks/{taskId}")
-    public ResponseEntity<ApiResponseDto<TaskStatusDto>> getTask(@PathVariable String taskId) {
-        TaskStatusDto t = queueService.getTask(taskId);
+    public ResponseEntity<ApiResponseDto<TaskStatusDto>> getTask(@PathVariable String taskId, HttpServletRequest request) {
+        String ip = getClientIp(request);
+        TaskStatusDto t = queueService.getTask(taskId, ip);
         if (t == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(ApiResponseDto.success(t));
     }
 
     @GetMapping("/tasks")
-    public ResponseEntity<ApiResponseDto<Object>> listTasks() {
-        return ResponseEntity.ok(ApiResponseDto.success(queueService.getQueueStatus()));
+    public ResponseEntity<ApiResponseDto<Object>> listTasks(HttpServletRequest request) {
+        String ip = getClientIp(request);
+        return ResponseEntity.ok(ApiResponseDto.success(queueService.getQueueStatus(ip)));
     }
 
     @DeleteMapping("/tasks/{taskId}")
-    public ResponseEntity<ApiResponseDto<Void>> cancel(@PathVariable String taskId) {
-        queueService.cancelTask(taskId);
+    public ResponseEntity<ApiResponseDto<Void>> cancel(@PathVariable String taskId, HttpServletRequest request) {
+        String ip = getClientIp(request);
+        queueService.cancelTask(taskId, ip);
         return ResponseEntity.ok(ApiResponseDto.success(null));
     }
 
     @GetMapping("/downloads/{filename}")
-    public ResponseEntity<FileSystemResource> downloadFile(@PathVariable String filename) {
+    public ResponseEntity<FileSystemResource> downloadFile(@PathVariable String filename, HttpServletRequest request) {
         if (!storage.fileExists(filename)) {
             return ResponseEntity.notFound().build();
         }
+        
+        // Verify file belongs to current user by checking task ownership
+        String taskId = extractTaskIdFromFilename(filename);
+        String clientIp = getClientIp(request);
+        TaskStatusDto task = queueService.getTask(taskId, clientIp);
+        
+        if (task == null || task.getStatus() == null || !task.getStatus().equals("completed")) {
+            return ResponseEntity.status(403).build(); // Forbidden: file doesn't belong to user or not completed
+        }
+        
         File file = storage.getFile(filename);
         FileSystemResource resource = new FileSystemResource(file);
         return ResponseEntity.ok()
@@ -81,4 +104,11 @@ public class DownloadController {
                 .body(resource);
     }
 
+    private String extractTaskIdFromFilename(String filename) {
+        // filename format: "dl-<taskId>.ext"
+        if (filename.startsWith("dl-") && filename.contains(".")) {
+            return filename.substring(3, filename.lastIndexOf("."));
+        }
+        return filename;
+    }
 }

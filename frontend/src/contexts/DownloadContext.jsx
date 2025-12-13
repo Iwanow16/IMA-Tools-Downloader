@@ -104,6 +104,12 @@ export const DownloadProvider = ({ children }) => {
   const refreshTasks = useCallback(async () => {
     try {
       const serverTasks = await downloadAPI.getTasks();
+      
+      // Ensure serverTasks is always an array
+      if (!Array.isArray(serverTasks)) {
+        console.warn('Invalid serverTasks format:', serverTasks);
+        return;
+      }
 
       setTasks((prev) => {
         const updated = [...prev];
@@ -113,8 +119,10 @@ export const DownloadProvider = ({ children }) => {
           const idx = updated.findIndex((t) => t.id === taskId);
 
           if (idx >= 0) {
+            // Merge server response with local task, preserving id consistency
             updated[idx] = { ...updated[idx], ...serverTask, id: taskId };
           } else {
+            // New task from server
             updated.push({ ...serverTask, id: taskId });
           }
         });
@@ -122,7 +130,8 @@ export const DownloadProvider = ({ children }) => {
         return updated;
       });
     } catch (err) {
-      console.error('Failed to refresh tasks:', err);
+      console.error('Failed to refresh tasks:', err.message);
+      // Don't propagate error, just log it
     }
   }, []);
 

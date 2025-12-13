@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
+import { downloadAPI } from '../services/api'
 import ProgressBar from './ProgressBar'
 import '../styles/components/DownloadQueue.css'
 
@@ -282,9 +283,10 @@ const DownloadQueue = () => {
                       <div className="task-actions-completed">
                         {task.filename && (
                           <a
-                            href={`/api/downloads/${task.filename}`}
+                            href={downloadAPI.downloadFile(task.filename)}
                             download
                             className="download-link"
+                            title="Download completed file"
                           >
                             <FaDownload /> Download
                           </a>

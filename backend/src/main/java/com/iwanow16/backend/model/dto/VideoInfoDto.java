@@ -1,11 +1,15 @@
 package com.iwanow16.backend.model.dto;
 
+
+import java.util.List;
+
 public class VideoInfoDto {
     private String id;
     private String title;
     private long durationSeconds;
     private long filesize;
     private String thumbnail;
+    private List<FormatDto> formats;
 
     public VideoInfoDto() {}
 
@@ -19,4 +23,6 @@ public class VideoInfoDto {
     public void setFilesize(long filesize) { this.filesize = filesize; }
     public String getThumbnail() { return thumbnail; }
     public void setThumbnail(String thumbnail) { this.thumbnail = thumbnail; }
+    public List<FormatDto> getFormats() { return formats; }
+    public void setFormats(List<FormatDto> formats) { this.formats = formats; }
 }

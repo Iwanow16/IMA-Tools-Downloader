@@ -3,6 +3,7 @@ package com.iwanow16.backend.extractor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iwanow16.backend.model.dto.VideoInfoDto;
+import com.iwanow16.backend.model.dto.FormatDto;
 import com.iwanow16.backend.util.ProcessExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,24 @@ public class YtDlpVideoExtractor implements VideoExtractor {
         info.setDurationSeconds(node.path("duration").asLong(0));
         info.setFilesize(node.path("filesize").asLong(0));
         info.setThumbnail(node.path("thumbnail").asText(null));
+
+        // Извлечение форматов
+        List<FormatDto> formats = new ArrayList<>();
+        JsonNode formatsNode = node.path("formats");
+        if (formatsNode.isArray()) {
+            for (JsonNode f : formatsNode) {
+                FormatDto format = new FormatDto();
+                format.setFormatId(f.path("format_id").asText());
+                format.setExt(f.path("ext").asText());
+                format.setFormatNote(f.path("format_note").asText(""));
+                format.setResolution(f.path("resolution").asText(""));
+                format.setAcodec(f.path("acodec").asText(""));
+                format.setVcodec(f.path("vcodec").asText(""));
+                format.setFilesize(f.path("filesize").asLong(0));
+                formats.add(format);
+            }
+        }
+        info.setFormats(formats);
         return info;
     }
 

@@ -2,6 +2,8 @@ package com.iwanow16.backend.service;
 
 import com.iwanow16.backend.config.DownloaderProperties;
 import com.iwanow16.backend.model.dto.TaskStatusDto;
+import com.iwanow16.backend.service.strategy.DownloadStrategyFactory;
+import com.iwanow16.backend.service.strategy.DownloadStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class DownloadQueueService {
 
     @Autowired
     private FileStorageService storage;
+
+    @Autowired
+    private DownloadStrategyFactory strategyFactory;
 
     private ExecutorService executor;
     private Semaphore globalSemaphore;
@@ -60,30 +65,27 @@ public class DownloadQueueService {
             globalSemaphore.acquire();
             ipSem.acquire();
             t.setStatus("downloading");
-            // Run download via script
-            String safeName = "dl-" + taskId + ".%(ext)s";
-            Path out = storage.getFilePath(safeName);
-            t.setFilename(safeName);
 
-            // Use system command yt-dlp via shell script
-            ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c",
-                    String.format("/app/scripts/yt-dlp-wrapper.sh '%s' '%s' '%s' '%s'", url, out.getParent().toString(), formatId == null ? "" : formatId, quality == null ? "" : quality));
-            pb.redirectErrorStream(true);
-            Process p = pb.start();
-            // simple progress poll: just wait for completion
-            int rc = p.waitFor();
-            if (rc == 0) {
-                t.setStatus("completed");
-                t.setProgress(100);
-                t.setCompletedAt(OffsetDateTime.now());
-            } else {
-                t.setStatus("failed");
-                t.setProgress(0);
-                t.setFailedAt(OffsetDateTime.now());
-            }
+            // Получить подходящую стратегию для URL
+            DownloadStrategy strategy = strategyFactory.getStrategy(url);
+            log.info("[{}] Using strategy: {}", taskId, strategy.getServiceName());
+
+            // Скачать файл
+            Path downloadDir = storage.getStorageDir();
+            Path downloadedFile = strategy.download(url, downloadDir, formatId, taskId);
+
+            // Сохранить информацию о файле
+            String filename = downloadedFile.getFileName().toString();
+            t.setFilename(filename);
+            t.setStatus("completed");
+            t.setProgress(100);
+            t.setCompletedAt(OffsetDateTime.now());
+            log.info("[{}] Download completed: {}", taskId, filename);
+
         } catch (Exception e) {
-            log.error("Error in download task {}", taskId, e);
+            log.error("[{}] Error in download task", taskId, e);
             t.setStatus("failed");
+            t.setProgress(0);
             t.setFailedAt(OffsetDateTime.now());
             t.setError(e.getMessage());
         } finally {

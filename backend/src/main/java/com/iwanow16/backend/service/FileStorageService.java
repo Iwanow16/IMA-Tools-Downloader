@@ -30,4 +30,8 @@ public class FileStorageService {
     public File getFile(String filename) {
         return getFilePath(filename).toFile();
     }
+
+    public Path getStorageDir() {
+        return Paths.get(outputDir).toAbsolutePath().normalize();
+    }
 }

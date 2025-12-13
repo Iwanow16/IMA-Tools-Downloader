@@ -1,9 +1,10 @@
 package com.iwanow16.backend.controller;
 
-import com.iwanow16.backend.extractor.YtDlpVideoExtractor;
+import com.iwanow16.backend.extractor.VideoExtractorService;
 import com.iwanow16.backend.model.dto.*;
 import com.iwanow16.backend.service.DownloadQueueService;
 import com.iwanow16.backend.service.FileStorageService;
+import com.iwanow16.backend.service.strategy.DownloadStrategyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
@@ -19,13 +20,16 @@ import java.io.File;
 public class DownloadController {
 
     @Autowired
-    private YtDlpVideoExtractor extractor;
+    private VideoExtractorService extractorService;
 
     @Autowired
     private DownloadQueueService queueService;
 
     @Autowired
     private FileStorageService storage;
+
+    @Autowired
+    private DownloadStrategyFactory strategyFactory;
 
     private String getClientIp(HttpServletRequest request) {
         // Check X-Forwarded-For header (for proxied requests)
@@ -40,19 +44,29 @@ public class DownloadController {
     @GetMapping("/info")
     public ResponseEntity<ApiResponseDto<VideoInfoDto>> info(@RequestParam String url) {
         try {
-            VideoInfoDto info = extractor.extractInfo(url);
+            // Получить подходящий экстрактор
+            VideoInfoDto info = extractorService.extractInfo(url);
             return ResponseEntity.ok(ApiResponseDto.success(info));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Unsupported URL: " + e.getMessage(), 400));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponseDto.error(e.getMessage(), 400));
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to extract info: " + e.getMessage(), 400));
         }
     }
 
     @PostMapping("/download")
     public ResponseEntity<ApiResponseDto<TaskStatusDto>> download(@RequestBody DownloadRequestDto req, HttpServletRequest request) {
         String ip = getClientIp(request);
-        // basic validation
+        
+        // Валидация URL
         if (req.getUrl() == null || req.getUrl().length() > 1000) {
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Invalid URL", 400));
+        }
+
+        // Проверить, поддерживается ли URL
+        if (!strategyFactory.isSupported(req.getUrl())) {
+            return ResponseEntity.badRequest().body(ApiResponseDto.error(
+                    "URL not supported. Supported services: " + strategyFactory.getSupportedServices(), 400));
         }
 
         TaskStatusDto t = queueService.submitDownload(req.getUrl(), ip, req.getFormatId(), req.getQuality());
@@ -86,12 +100,16 @@ public class DownloadController {
             return ResponseEntity.notFound().build();
         }
         
-        // Verify file belongs to current user by checking task ownership
-        String taskId = extractTaskIdFromFilename(filename);
         String clientIp = getClientIp(request);
-        TaskStatusDto task = queueService.getTask(taskId, clientIp);
         
-        if (task == null || task.getStatus() == null || !task.getStatus().equals("completed")) {
+        // Check if file belongs to a task completed by current user
+        java.util.List<TaskStatusDto> userTasks = queueService.getQueueStatus(clientIp);
+        boolean hasAccess = userTasks.stream()
+                .anyMatch(task -> task.getFilename() != null && 
+                                 task.getFilename().equals(filename) && 
+                                 "completed".equals(task.getStatus()));
+        
+        if (!hasAccess) {
             return ResponseEntity.status(403).build(); // Forbidden: file doesn't belong to user or not completed
         }
         

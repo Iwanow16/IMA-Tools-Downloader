@@ -7,32 +7,54 @@ import com.iwanow16.backend.model.dto.FormatDto;
 import com.iwanow16.backend.util.ProcessExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Экстрактор информации о видео с YouTube с использованием yt-dlp.
+ * Поддерживает извлечение метаданных и списка доступных форматов.
+ */
 @Component
 public class YtDlpVideoExtractor implements VideoExtractor {
     private static final Logger log = LoggerFactory.getLogger(YtDlpVideoExtractor.class);
     private final ObjectMapper mapper = new ObjectMapper();
 
+    @Value("${youtube.cookies-file:}")
+    private String cookiesFile;
+
+    @Value("${youtube.js-runtime:node}")
+    private String jsRuntime;
+
     @Override
     public VideoInfoDto extractInfo(String url) throws Exception {
+        log.info("Extracting video info from YouTube: {}", url);
+        
         List<String> cmd = new ArrayList<>();
         cmd.add("yt-dlp");
+
+        // Добавить cookies, если они настроены
+        if (cookiesFile != null && !cookiesFile.isBlank()) {
+            cmd.add("--cookies");
+            cmd.add(cookiesFile);
+        }
+
         cmd.add("--dump-json");
         cmd.add(url);
 
         StringBuilder out = new StringBuilder();
         int rc = ProcessExecutor.run(cmd, 30, out);
         if (rc != 0) {
-            throw new RuntimeException("yt-dlp failed with code " + rc + ": " + out.toString());
+            String errorOutput = out.toString();
+            log.error("yt-dlp failed with code {}: {}", rc, errorOutput);
+            throw new RuntimeException("yt-dlp failed with code " + rc + ": " + errorOutput);
         }
 
         String json = out.toString().trim();
-        // yt-dlp may emit warnings/info lines before the JSON payload.
-        // Find the first line that looks like JSON (starts with '{' or '[').
+        // yt-dlp может выводить предупреждения перед JSON.
+        // Найти первую строку, которая выглядит как JSON (начинается с '{' или '[').
         String[] lines = json.split("\n");
         String jsonLine = null;
         for (String l : lines) {
@@ -85,6 +107,7 @@ public class YtDlpVideoExtractor implements VideoExtractor {
             }
         }
         info.setFormats(formats);
+        log.info("Extracted {} formats for video: {}", formats.size(), info.getTitle());
         return info;
     }
 

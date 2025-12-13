@@ -34,12 +34,15 @@ downloader:
   default-audio-quality: 192k
   enable-subtitles: false
   enable-thumbnail: true
-  services:
-    youtube:
-      enabled: true
-      max-duration: 120
-      max-size: 2048
-      output-template: "%(title)s [%(id)s].%(ext)s"
+
+# YouTube specific configuration
+youtube:
+  # Optional: Path to cookies file for authentication
+  # cookies-file: /app/config/cookies.txt
+  cookies-file: ""
+  # JS runtime for yt-dlp (node, deno, or other)
+  # Use deno by default as it's often more reliable
+  js-runtime: deno
 
 logging:
   config: classpath:logback-spring.xml

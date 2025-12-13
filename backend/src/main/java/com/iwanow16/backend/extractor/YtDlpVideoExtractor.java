@@ -33,7 +33,7 @@ public class YtDlpVideoExtractor implements VideoExtractor {
 
     @Override
     public VideoInfoDto extractInfo(String url) throws Exception {
-        log.info("Extracting video info from YouTube: {}", url);
+        log.info("🎥 YtDlp: Extracting video info from: {}", url);
         
         List<String> cmd = new ArrayList<>();
         cmd.add("yt-dlp");
@@ -42,16 +42,22 @@ public class YtDlpVideoExtractor implements VideoExtractor {
         if (cookiesFile != null && !cookiesFile.isBlank()) {
             cmd.add("--cookies");
             cmd.add(cookiesFile);
+            log.debug("🍪 Using cookies file: {}", cookiesFile);
         }
 
         cmd.add("--dump-json");
         cmd.add(url);
 
         StringBuilder out = new StringBuilder();
+        long startTime = System.currentTimeMillis();
+        log.debug("⏳ Running yt-dlp command...");
+        
         int rc = ProcessExecutor.run(cmd, 30, out);
+        long duration = System.currentTimeMillis() - startTime;
+        
         if (rc != 0) {
             String errorOutput = out.toString();
-            log.error("yt-dlp failed with code {}: {}", rc, errorOutput);
+            log.error("❌ yt-dlp failed with code {}: {} (Duration: {}ms)", rc, errorOutput, duration);
             throw new RuntimeException("yt-dlp failed with code " + rc + ": " + errorOutput);
         }
 
@@ -68,6 +74,7 @@ public class YtDlpVideoExtractor implements VideoExtractor {
             }
         }
         if (jsonLine == null) {
+            log.error("❌ Could not find JSON output from yt-dlp. Output: {}", json);
             throw new RuntimeException("Could not find JSON output from yt-dlp. Output: " + json);
         }
         JsonNode node = mapper.readTree(jsonLine);
@@ -87,6 +94,8 @@ public class YtDlpVideoExtractor implements VideoExtractor {
         
         JsonNode formatsNode = node.path("formats");
         if (formatsNode.isArray()) {
+            log.debug("📊 Processing {} formats...", formatsNode.size());
+            
             for (JsonNode f : formatsNode) {
                 // Пропускаем форматы без видео (только полученные форматы с видео кодеком)
                 String vcodec = f.path("vcodec").asText("none");
@@ -146,7 +155,8 @@ public class YtDlpVideoExtractor implements VideoExtractor {
                 .collect(Collectors.toList());
         
         info.setFormats(formats);
-        log.info("Extracted {} formats for video: {}", formats.size(), info.getTitle());
+        log.info("✅ Successfully extracted video info | Title: {} | Duration: {}s | Formats: {} | Duration: {}ms", 
+                info.getTitle(), info.getDurationSeconds(), formats.size(), duration);
         return info;
     }
 

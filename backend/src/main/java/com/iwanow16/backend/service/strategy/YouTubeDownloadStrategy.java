@@ -35,7 +35,8 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
 
     @Override
     public Path download(String url, Path outputDir, String formatId, String taskId) throws Exception {
-        log.info("[{}] Downloading from YouTube: {}", taskId, url);
+        log.info("📹 YouTube download started | TaskID: {} | URL: {} | Format: {}", taskId, url, formatId);
+        long startTime = System.currentTimeMillis();
         
         List<String> cmd = new ArrayList<>();
         cmd.add("yt-dlp");
@@ -44,6 +45,7 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
         if (cookiesFile != null && !cookiesFile.isBlank()) {
             cmd.add("--cookies");
             cmd.add(cookiesFile);
+            log.debug("🍪 Using cookies file | TaskID: {}", taskId);
         }
 
         // Указать формат (если не задан, yt-dlp выберет лучший)
@@ -67,7 +69,7 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
         // Добавить URL в конец команды
         cmd.add(url);
 
-        log.info("[{}] Running command: {}", taskId, cmd);
+        log.debug("⏳ Executing yt-dlp command | TaskID: {} | Format: {}", taskId, formatId);
         
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(outputDir.toFile());
@@ -84,10 +86,10 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
-                    log.debug("[{}] {}", taskId, line);
+                    log.debug("📊 yt-dlp output | TaskID: {} | {}", taskId, line);
                 }
             } catch (Exception e) {
-                log.warn("[{}] Error reading output", taskId, e);
+                log.warn("⚠️ Error reading output | TaskID: {}", taskId, e);
             }
         });
 
@@ -97,10 +99,10 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     error.append(line).append("\n");
-                    log.debug("[{}] ERROR: {}", taskId, line);
+                    log.debug("⚠️ yt-dlp error | TaskID: {} | {}", taskId, line);
                 }
             } catch (Exception e) {
-                log.warn("[{}] Error reading error stream", taskId, e);
+                log.warn("⚠️ Error reading error stream | TaskID: {}", taskId, e);
             }
         });
 
@@ -113,13 +115,16 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
 
         if (rc != 0) {
             String errorMsg = error.toString().isEmpty() ? output.toString() : error.toString();
-            log.error("[{}] YouTube download failed with code {}: {}", taskId, rc, errorMsg);
+            long duration = System.currentTimeMillis() - startTime;
+            log.error("❌ YouTube download failed | TaskID: {} | Code: {} | Duration: {}ms | Error: {}", 
+                    taskId, rc, duration, errorMsg);
             throw new RuntimeException("YouTube download failed: " + errorMsg);
         }
 
         // Найти скачанный файл
         String videoId = extractVideoId(url);
         if (videoId == null) {
+            log.error("❌ Could not extract video ID | TaskID: {} | URL: {}", taskId, url);
             throw new RuntimeException("Could not extract video ID from URL");
         }
 
@@ -127,11 +132,16 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
         for (String ext : new String[]{"mp4", "mkv", "webm", "flv", "avi", "mov", "m4a", "aac", "opus"}) {
             Path file = outputDir.resolve(videoId + "." + ext);
             if (file.toFile().exists()) {
-                log.info("[{}] Download completed: {}", taskId, file);
+                long duration = System.currentTimeMillis() - startTime;
+                log.info("✅ YouTube download completed | TaskID: {} | Filename: {} | Duration: {}ms", 
+                        taskId, file.getFileName(), duration);
                 return file;
             }
         }
 
+        long duration = System.currentTimeMillis() - startTime;
+        log.error("❌ Downloaded file not found | TaskID: {} | VideoID: {} | Duration: {}ms", 
+                taskId, videoId, duration);
         throw new RuntimeException("Downloaded file not found in output directory");
     }
 

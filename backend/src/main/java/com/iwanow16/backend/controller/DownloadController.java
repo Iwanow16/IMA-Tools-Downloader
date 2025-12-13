@@ -5,10 +5,14 @@ import com.iwanow16.backend.model.dto.*;
 import com.iwanow16.backend.service.DownloadQueueService;
 import com.iwanow16.backend.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.File;
 
 @RestController
 @RequestMapping("/api")
@@ -61,6 +65,20 @@ public class DownloadController {
     public ResponseEntity<ApiResponseDto<Void>> cancel(@PathVariable String taskId) {
         queueService.cancelTask(taskId);
         return ResponseEntity.ok(ApiResponseDto.success(null));
+    }
+
+    @GetMapping("/downloads/{filename}")
+    public ResponseEntity<FileSystemResource> downloadFile(@PathVariable String filename) {
+        if (!storage.fileExists(filename)) {
+            return ResponseEntity.notFound().build();
+        }
+        File file = storage.getFile(filename);
+        FileSystemResource resource = new FileSystemResource(file);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())
+                .contentLength(file.length())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 
 }

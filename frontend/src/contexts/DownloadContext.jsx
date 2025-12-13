@@ -42,7 +42,7 @@ export const DownloadProvider = ({ children }) => {
       const response = await downloadAPI.startDownload(url, formatId, quality);
 
       const newTask = {
-        id: response.taskId,
+        id: response.id || response.taskId,
         url,
         formatId,
         quality,
@@ -109,12 +109,13 @@ export const DownloadProvider = ({ children }) => {
         const updated = [...prev];
 
         serverTasks.forEach((serverTask) => {
-          const idx = updated.findIndex((t) => t.id === serverTask.id);
+          const taskId = serverTask.id || serverTask.taskId;
+          const idx = updated.findIndex((t) => t.id === taskId);
 
           if (idx >= 0) {
-            updated[idx] = { ...updated[idx], ...serverTask };
+            updated[idx] = { ...updated[idx], ...serverTask, id: taskId };
           } else {
-            updated.push(serverTask);
+            updated.push({ ...serverTask, id: taskId });
           }
         });
 

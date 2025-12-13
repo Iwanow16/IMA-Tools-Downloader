@@ -41,7 +41,7 @@ export const downloadAPI = {
       const response = await api.get(config.api.endpoints.info, {
         params: { url }
       })
-      return response.data
+      return response.data?.data || response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch video info')
     }
@@ -55,7 +55,7 @@ export const downloadAPI = {
         formatId,
         quality
       })
-      return response.data
+      return response.data?.data || response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to start download')
     }
@@ -65,7 +65,7 @@ export const downloadAPI = {
   getTasks: async () => {
     try {
       const response = await api.get(config.api.endpoints.tasks)
-      return response.data
+      return response.data?.data || response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch tasks')
     }

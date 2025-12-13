@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.Map;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
 
@@ -41,8 +41,11 @@ public class DownloadQueueService {
         TaskStatusDto t = new TaskStatusDto();
         t.setTaskId(id);
         t.setUrl(url);
-        t.setStatus("PENDING");
+        t.setStatus("pending");
         t.setProgress(0);
+        t.setFormatId(formatId);
+        t.setQuality(quality);
+        t.setCreatedAt(OffsetDateTime.now());
         tasks.put(id, t);
 
         executor.submit(() -> runDownloadTask(id, url, clientIp, formatId, quality));
@@ -55,7 +58,7 @@ public class DownloadQueueService {
         try {
             globalSemaphore.acquire();
             ipSem.acquire();
-            t.setStatus("PROCESSING");
+            t.setStatus("downloading");
             // Run download via script
             String safeName = "dl-" + taskId + ".%(ext)s";
             Path out = storage.getFilePath(safeName);
@@ -69,15 +72,19 @@ public class DownloadQueueService {
             // simple progress poll: just wait for completion
             int rc = p.waitFor();
             if (rc == 0) {
-                t.setStatus("COMPLETED");
+                t.setStatus("completed");
                 t.setProgress(100);
+                t.setCompletedAt(OffsetDateTime.now());
             } else {
-                t.setStatus("FAILED");
+                t.setStatus("failed");
                 t.setProgress(0);
+                t.setFailedAt(OffsetDateTime.now());
             }
         } catch (Exception e) {
             log.error("Error in download task {}", taskId, e);
-            t.setStatus("FAILED");
+            t.setStatus("failed");
+            t.setFailedAt(OffsetDateTime.now());
+            t.setError(e.getMessage());
         } finally {
             ipSemaphores.computeIfPresent(clientIp, (k, sem) -> { sem.release(); return sem; });
             globalSemaphore.release();
@@ -88,13 +95,13 @@ public class DownloadQueueService {
         return tasks.get(id);
     }
 
-    public Map<String, Object> getQueueStatus() {
-        return Map.of("queued", tasks.size());
+    public List<TaskStatusDto> getQueueStatus() {
+        return tasks.values().stream().toList();
     }
 
     public void cancelTask(String taskId) {
         // Not implemented: would track Process and kill it
         TaskStatusDto t = tasks.get(taskId);
-        if (t != null) t.setStatus("CANCELLED");
+        if (t != null) t.setStatus("cancelled");
     }
 }

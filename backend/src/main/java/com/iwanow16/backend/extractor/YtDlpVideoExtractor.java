@@ -49,7 +49,9 @@ public class YtDlpVideoExtractor implements VideoExtractor {
 
         VideoInfoDto info = new VideoInfoDto();
         info.setId(node.path("id").asText());
+        info.setUrl(url);
         info.setTitle(node.path("title").asText());
+        info.setAuthor(node.path("uploader").asText(null));
         info.setDurationSeconds(node.path("duration").asLong(0));
         info.setFilesize(node.path("filesize").asLong(0));
         info.setThumbnail(node.path("thumbnail").asText(null));
@@ -62,11 +64,23 @@ public class YtDlpVideoExtractor implements VideoExtractor {
                 FormatDto format = new FormatDto();
                 format.setFormatId(f.path("format_id").asText());
                 format.setExt(f.path("ext").asText());
-                format.setFormatNote(f.path("format_note").asText(""));
+                String formatNote = f.path("format_note").asText("");
+                format.setNote(formatNote);
                 format.setResolution(f.path("resolution").asText(""));
                 format.setAcodec(f.path("acodec").asText(""));
                 format.setVcodec(f.path("vcodec").asText(""));
-                format.setFilesize(f.path("filesize").asLong(0));
+                long size = f.path("filesize").asLong(0);
+                if (size == 0) {
+                    size = f.path("filesize_approx").asLong(0);
+                }
+                format.setFilesize(size);
+
+                // prefer quality from format_note, fallback to resolution
+                String quality = formatNote;
+                if (quality == null || quality.isBlank()) {
+                    quality = f.path("resolution").asText("");
+                }
+                format.setQuality(quality);
                 formats.add(format);
             }
         }

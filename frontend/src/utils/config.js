@@ -1,6 +1,6 @@
 const config = {
   api: {
-    baseUrl: import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:8080',
+    baseUrl: import.meta.env.REACT_APP_API_BASE_URL || 'http://localhost:8080',
     endpoints: {
       info: '/api/info',
       download: '/api/download',

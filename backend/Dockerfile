@@ -10,6 +10,9 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar ./app.jar
 
+# Copy resources including cookies file
+COPY src/main/resources ./resources
+
 # Install ffmpeg, yt-dlp runtime dependencies, and browsers for cookie extraction
 RUN apt-get update && apt-get install -y \
     ffmpeg \

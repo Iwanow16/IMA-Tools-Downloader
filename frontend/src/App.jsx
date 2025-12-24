@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import UrlInput from './components/UrlInput'
 import VideoInfo from './components/VideoInfo'
@@ -7,12 +7,54 @@ import LanguageSwitcher from './components/LanguageSwitcher'
 import SupportedServices from './components/SupportedServices'
 import { DownloadProvider } from './contexts/DownloadContext'
 import { LanguageProvider } from './contexts/LanguageContext'
+import { downloadAPI } from './services/api'
+import config from './utils/config'
 import { FaDownload, FaGithub, FaGlobe } from 'react-icons/fa'
 import './services/i18n'
 import './styles/App.css'
 
 const App = () => {
   const { t } = useTranslation()
+
+  // Загружаем поддерживаемые сервисы при инициализации приложения
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const serviceNames = await downloadAPI.getSupportedServices()
+        
+        // Создаем конфигурации сервисов
+        const serviceConfigs = {
+          youtube: {
+            id: 'youtube',
+            name: 'YouTube',
+            domains: ['youtube.com', 'youtu.be', 'youtube-nocookie.com'],
+            icon: 'FaYoutube',
+            color: '#FF0000',
+            regex: /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/
+          },
+          bilibili: {
+            id: 'bilibili',
+            name: 'Bilibili',
+            domains: ['bilibili.com', 'b23.tv'],
+            icon: 'FaVideo',
+            color: '#00A1D6',
+            regex: /^(https?:\/\/)?(www\.)?(bilibili\.com|b23\.tv)\/.+$/
+          }
+        }
+        
+        const loadedServices = serviceNames
+          .map(name => serviceConfigs[name])
+          .filter(Boolean)
+        
+        config.supportedServices = loadedServices
+      } catch (err) {
+        console.error('Failed to load services:', err)
+        config.supportedServices = []
+      }
+    }
+    
+    loadServices()
+  }, [])
 
   return (
     <LanguageProvider>

@@ -61,6 +61,14 @@ public class DownloadController {
         }
     }
 
+    @GetMapping("/services")
+    public ResponseEntity<ApiResponseDto<java.util.List<String>>> getSupportedServices() {
+        log.info("📋 Getting supported services list");
+        java.util.List<String> services = strategyFactory.getSupportedServices();
+        log.info("✅ Supported services: {}", services);
+        return ResponseEntity.ok(ApiResponseDto.success(services));
+    }
+
     @PostMapping("/download")
     public ResponseEntity<ApiResponseDto<TaskStatusDto>> download(@RequestBody DownloadRequestDto req, HttpServletRequest request) {
         String ip = getClientIp(request);
@@ -78,7 +86,7 @@ public class DownloadController {
         if (!strategyFactory.isSupported(req.getUrl())) {
             log.warn("❌ Unsupported URL from {}: {}", ip, req.getUrl());
             return ResponseEntity.badRequest().body(ApiResponseDto.error(
-                    "URL not supported. Supported services: " + strategyFactory.getSupportedServices(), 400));
+                    "URL not supported. Please check if the URL is valid and belongs to a supported service.", 400));
         }
 
         TaskStatusDto t = queueService.submitDownload(req.getUrl(), ip, req.getFormatId(), req.getQuality());

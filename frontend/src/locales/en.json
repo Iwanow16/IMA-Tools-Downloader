@@ -79,8 +79,11 @@
     "count": "{count} platforms supported",
     "clickToCopy": "Click to copy domain",
     "copied": "Domain copied!",
+    "noServicesAvailable": "No supported services available",
+    "noServicesDescription": "Unable to load supported services from backend. Please try again later.",
     "serviceDetails": {
-      "youtube": "YouTube - Videos, shorts, live streams"
+      "youtube": "YouTube - Videos, shorts, live streams",
+      "bilibili": "Bilibili - Chinese video platform"
     }
   },
   "stats": {

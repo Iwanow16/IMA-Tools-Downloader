@@ -99,6 +99,17 @@ export const downloadAPI = {
     }
   },
 
+  // Get supported services
+  getSupportedServices: async () => {
+    try {
+      const response = await api.get(config.api.endpoints.services)
+      return response.data?.data || response.data || []
+    } catch (error) {
+      console.error('Failed to fetch supported services:', error)
+      throw error  // Пробросить ошибку, не fallback
+    }
+  },
+
   // Download file
   downloadFile: (filename) => {
     return `${config.api.baseUrl}/api/downloads/${filename}`

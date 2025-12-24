@@ -42,13 +42,14 @@ export const DownloadProvider = ({ children }) => {
       const response = await downloadAPI.startDownload(url, formatId, quality);
 
       const newTask = {
-        id: response.taskId,
+        id: response.id || response.taskId,
         url,
         formatId,
         quality,
         status: 'pending',
         progress: 0,
         filename: null,
+        title: videoInfo?.title || 'Video', // Добавляем title видео
         error: null,
         createdAt: new Date().toISOString(),
         estimatedTime: null,
@@ -61,7 +62,7 @@ export const DownloadProvider = ({ children }) => {
       setError(err.message);
       throw err;
     }
-  }, []);
+  }, [videoInfo]);
 
   // Update task
   const updateTask = useCallback((taskId, updates) => {
@@ -104,24 +105,48 @@ export const DownloadProvider = ({ children }) => {
   const refreshTasks = useCallback(async () => {
     try {
       const serverTasks = await downloadAPI.getTasks();
+      
+      // Ensure serverTasks is always an array
+      if (!Array.isArray(serverTasks)) {
+        console.warn('Invalid serverTasks format:', serverTasks);
+        return;
+      }
 
       setTasks((prev) => {
-        const updated = [...prev];
+        const updated = prev.map(task => ({ ...task })); // Копируем текущие задачи
 
         serverTasks.forEach((serverTask) => {
-          const idx = updated.findIndex((t) => t.id === serverTask.id);
+          const taskId = serverTask.id || serverTask.taskId;
+          const idx = updated.findIndex((t) => t.id === taskId);
 
           if (idx >= 0) {
-            updated[idx] = { ...updated[idx], ...serverTask };
+            // Обновляем только незавершенные задачи с информацией с сервера
+            // Для завершенных задач используем локальное состояние
+            if (updated[idx].status === 'completed' || updated[idx].status === 'failed' || updated[idx].status === 'cancelled') {
+              // Не перезаписываем статус для завершенных задач
+              updated[idx] = { 
+                ...updated[idx], 
+                ...serverTask, 
+                id: taskId,
+                status: updated[idx].status // Сохраняем локальный статус
+              };
+            } else {
+              // Для активных задач обновляем всю информацию
+              updated[idx] = { ...updated[idx], ...serverTask, id: taskId };
+            }
           } else {
-            updated.push(serverTask);
+            // Новая задача от сервера - добавляем только если не завершена
+            if (serverTask.status !== 'completed' && serverTask.status !== 'failed' && serverTask.status !== 'cancelled') {
+              updated.push({ ...serverTask, id: taskId });
+            }
           }
         });
 
         return updated;
       });
     } catch (err) {
-      console.error('Failed to refresh tasks:', err);
+      console.error('Failed to refresh tasks:', err.message);
+      // Don't propagate error, just log it
     }
   }, []);
 

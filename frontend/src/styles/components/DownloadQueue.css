@@ -304,6 +304,18 @@
   margin-bottom: var(--spacing-md);
 }
 
+.task-title {
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  line-height: 1.4;
+}
+
 .task-url {
   color: var(--text-secondary);
   font-size: var(--font-sm);

@@ -1,0 +1,70 @@
+# Consolidated application configuration
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ima-downloader-backend
+
+app:
+  version: 1.0.0
+  environment: prod
+  temp-dir: /app/temp
+  output-dir: /app/downloads
+  log-dir: /app/logs
+  config-dir: /app/config
+
+downloader:
+  max-concurrent-downloads: 3
+  max-concurrent-per-ip: 2
+  max-queue-size: 100
+  download-timeout-minutes: 60
+  yt-dlp-path: /usr/local/bin/yt-dlp
+  ffmpeg-path: /usr/local/bin/ffmpeg
+  cleanup-enabled: true
+  cleanup-interval-hours: 6
+  temp-file-max-age-hours: 24
+  completed-file-max-age-days: 30
+  rate-limit-per-ip: 20
+  rate-limit-window-minutes: 1
+  allowed-domains:
+    - youtube.com
+    - youtu.be
+  default-quality: best
+  default-audio-quality: 192k
+  enable-subtitles: false
+  enable-thumbnail: true
+
+# YouTube specific configuration
+youtube:
+  # Optional: Path to cookies file for authentication
+  # cookies-file: /app/config/cookies.txt
+  cookies-file: ""
+  # JS runtime for yt-dlp (node, deno, or other)
+  # Use deno by default as it's often more reliable
+  js-runtime: deno
+
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    root: INFO
+  file:
+    name: /app/logs/app.log
+    max-size: 20MB
+    max-history: 30
+    total-size-cap: 1GB
+    retention-days: 30
+
+# Пояснения:
+# file.name — путь к файлу лога
+# max-size — максимальный размер одного файла лога
+# max-history — сколько файлов хранить (ротация)
+# total-size-cap — общий лимит на все логи
+# retention-days — сколько дней хранить логи
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+      base-path: /manage

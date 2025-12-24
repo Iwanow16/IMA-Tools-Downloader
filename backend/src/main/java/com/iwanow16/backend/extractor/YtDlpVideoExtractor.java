@@ -1,0 +1,214 @@
+package com.iwanow16.backend.extractor;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.iwanow16.backend.model.dto.VideoInfoDto;
+import com.iwanow16.backend.model.dto.FormatDto;
+import com.iwanow16.backend.util.ProcessExecutor;
+import com.iwanow16.backend.util.FormatEnhancer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
+
+/**
+ * Экстрактор информации о видео с YouTube с использованием yt-dlp.
+ * Поддерживает извлечение метаданных и списка доступных форматов.
+ */
+@Component
+public class YtDlpVideoExtractor implements VideoExtractor {
+    private static final Logger log = LoggerFactory.getLogger(YtDlpVideoExtractor.class);
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    @Value("${youtube.cookies-file:}")
+    private String cookiesFile;
+
+    @Value("${youtube.js-runtime:node}")
+    private String jsRuntime;
+
+    @Override
+    public VideoInfoDto extractInfo(String url) throws Exception {
+        log.info("🎥 YtDlp: Extracting video info from: {}", url);
+        
+        List<String> cmd = new ArrayList<>();
+        cmd.add("yt-dlp");
+
+        // Добавить cookies, если они настроены
+        if (cookiesFile != null && !cookiesFile.isBlank()) {
+            cmd.add("--cookies");
+            cmd.add(cookiesFile);
+            log.debug("🍪 Using cookies file: {}", cookiesFile);
+        }
+
+        cmd.add("--dump-json");
+        cmd.add(url);
+
+        StringBuilder out = new StringBuilder();
+        long startTime = System.currentTimeMillis();
+        log.debug("⏳ Running yt-dlp command...");
+        
+        int rc = ProcessExecutor.run(cmd, 30, out);
+        long duration = System.currentTimeMillis() - startTime;
+        
+        if (rc != 0) {
+            String errorOutput = out.toString();
+            log.error("❌ yt-dlp failed with code {}: {} (Duration: {}ms)", rc, errorOutput, duration);
+            throw new RuntimeException("yt-dlp failed with code " + rc + ": " + errorOutput);
+        }
+
+        String json = out.toString().trim();
+        // yt-dlp может выводить предупреждения перед JSON.
+        // Найти первую строку, которая выглядит как JSON (начинается с '{' или '[').
+        String[] lines = json.split("\n");
+        String jsonLine = null;
+        for (String l : lines) {
+            String t = l.trim();
+            if (t.startsWith("{") || t.startsWith("[")) {
+                jsonLine = t;
+                break;
+            }
+        }
+        if (jsonLine == null) {
+            log.error("❌ Could not find JSON output from yt-dlp. Output: {}", json);
+            throw new RuntimeException("Could not find JSON output from yt-dlp. Output: " + json);
+        }
+        JsonNode node = mapper.readTree(jsonLine);
+
+        VideoInfoDto info = new VideoInfoDto();
+        info.setId(node.path("id").asText());
+        info.setUrl(url);
+        info.setTitle(node.path("title").asText());
+        info.setAuthor(node.path("uploader").asText(null));
+        info.setDurationSeconds(node.path("duration").asLong(0));
+        info.setFilesize(node.path("filesize").asLong(0));
+        info.setThumbnail(node.path("thumbnail").asText(null));
+
+        // Извлечение форматов - фильтруем и группируем по качеству (по примеру Python кода)
+        List<FormatDto> formats = new ArrayList<>();
+        List<FormatDto> allFormats = new ArrayList<>();  // Сохраняем все форматы для обогащения
+        Map<String, FormatDto> qualityMap = new LinkedHashMap<>();
+        
+        JsonNode formatsNode = node.path("formats");
+        if (formatsNode.isArray()) {
+            log.debug("📊 Processing {} formats...", formatsNode.size());
+            
+            for (JsonNode f : formatsNode) {
+                // Пропускаем форматы без видео и аудио одновременно
+                String vcodec = f.path("vcodec").asText("none");
+                String acodec = f.path("acodec").asText("none");
+                
+                // Если есть хотя бы видео или аудио, добавляем в allFormats для обогащения
+                if (!"none".equals(vcodec) || !"none".equals(acodec)) {
+                    FormatDto format = new FormatDto();
+                    format.setFormatId(f.path("format_id").asText());
+                    format.setExt(f.path("ext").asText());
+                    format.setAcodec(acodec);
+                    format.setVcodec(vcodec);
+                    
+                    long size = f.path("filesize").asLong(0);
+                    if (size == 0) {
+                        size = f.path("filesize_approx").asLong(0);
+                    }
+                    format.setFilesize(size);
+                    
+                    int fps = f.path("fps").asInt(0);
+                    int width = f.path("width").asInt(0);
+                    int height = f.path("height").asInt(0);
+                    
+                    // Формируем качество: высота + fps если есть
+                    String quality = (height > 0) ? height + "p" : "Unknown";
+                    if (fps > 0) {
+                        quality += " (" + fps + "fps)";
+                    }
+                    if ("none".equals(vcodec) && !"none".equals(acodec)) {
+                        // Только аудио
+                        quality = "Audio only";
+                    }
+                    
+                    format.setQuality(quality);
+                    format.setResolution((width > 0 && height > 0) ? width + "x" + height : "");
+                    
+                    allFormats.add(format);
+                }
+                
+                // Для основного списка - берём только форматы с видео
+                if (!"none".equals(vcodec)) {
+                    // Пропускаем форматы без разрешения
+                    int height = f.path("height").asInt(0);
+                    if (height == 0) {
+                        continue;
+                    }
+                    
+                    FormatDto format = new FormatDto();
+                    format.setFormatId(f.path("format_id").asText());
+                    format.setExt(f.path("ext").asText());
+                    format.setAcodec(acodec);
+                    format.setVcodec(vcodec);
+                    
+                    long size = f.path("filesize").asLong(0);
+                    if (size == 0) {
+                        size = f.path("filesize_approx").asLong(0);
+                    }
+                    format.setFilesize(size);
+                    
+                    int fps = f.path("fps").asInt(0);
+                    int width = f.path("width").asInt(0);
+                    
+                    // Формируем качество: высота + fps если есть
+                    String quality = height + "p";
+                    if (fps > 0) {
+                        quality += " (" + fps + "fps)";
+                    }
+                    format.setQuality(quality);
+                    format.setResolution(width + "x" + height);
+                    
+                    // Группируем по разрешению, выбираем лучший для каждого качества
+                    String qualityKey = height + "p";
+                    if (!qualityMap.containsKey(qualityKey) || 
+                        ("none".equals(qualityMap.get(qualityKey).getAcodec()) && !"none".equals(acodec))) {
+                        // Заменяем если это первый формат для этого качества
+                        // или новый формат имеет аудио, а текущий нет
+                        qualityMap.put(qualityKey, format);
+                    }
+                }
+            }
+        }
+        
+        // Сортируем по качеству (по убыванию)
+        formats = qualityMap.values().stream()
+                .sorted((a, b) -> {
+                    String qualityA = a.getQuality().split("p")[0];
+                    String qualityB = b.getQuality().split("p")[0];
+                    try {
+                        return Integer.compare(Integer.parseInt(qualityB), Integer.parseInt(qualityA));
+                    } catch (Exception e) {
+                        return 0;
+                    }
+                })
+                .collect(Collectors.toList());
+        
+        // Обогатить форматы синтетическими video+audio вариантами, используя все доступные форматы
+        formats = FormatEnhancer.enhanceFormats(allFormats, "youtube");
+        
+        info.setFormats(formats);
+        log.info("✅ Successfully extracted video info | Title: {} | Duration: {}s | Formats: {} | Duration: {}ms", 
+                info.getTitle(), info.getDurationSeconds(), formats.size(), duration);
+        return info;
+    }
+
+    @Override
+    public String getServiceName() {
+        return "youtube";
+    }
+
+    @Override
+    public boolean supports(String url) {
+        return url != null && (url.contains("youtube.com") || url.contains("youtu.be"));
+    }
+}

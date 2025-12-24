@@ -1,0 +1,177 @@
+package com.iwanow16.backend.controller;
+
+import com.iwanow16.backend.extractor.VideoExtractorService;
+import com.iwanow16.backend.model.dto.*;
+import com.iwanow16.backend.service.DownloadQueueService;
+import com.iwanow16.backend.service.FileStorageService;
+import com.iwanow16.backend.service.strategy.DownloadStrategyFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.io.File;
+
+@RestController
+@RequestMapping("/api")
+public class DownloadController {
+
+    private static final Logger log = LoggerFactory.getLogger(DownloadController.class);
+
+    @Autowired
+    private VideoExtractorService extractorService;
+
+    @Autowired
+    private DownloadQueueService queueService;
+
+    @Autowired
+    private FileStorageService storage;
+
+    @Autowired
+    private DownloadStrategyFactory strategyFactory;
+
+    private String getClientIp(HttpServletRequest request) {
+        // Check X-Forwarded-For header (for proxied requests)
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        // Fallback to remote address
+        return request.getRemoteAddr();
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<ApiResponseDto<VideoInfoDto>> info(@RequestParam String url) {
+        try {
+            log.info("📋 Fetching video info for URL: {}", url);
+            VideoInfoDto info = extractorService.extractInfo(url);
+            log.info("✅ Successfully extracted info: title={}, formats={}", info.getTitle(), info.getFormats().size());
+            return ResponseEntity.ok(ApiResponseDto.success(info));
+        } catch (IllegalArgumentException e) {
+            log.warn("❌ Unsupported URL: {}", url, e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Unsupported URL: " + e.getMessage(), 400));
+        } catch (Exception e) {
+            log.error("❌ Failed to extract info for URL: {}", url, e);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Failed to extract info: " + e.getMessage(), 400));
+        }
+    }
+
+    @GetMapping("/services")
+    public ResponseEntity<ApiResponseDto<java.util.List<String>>> getSupportedServices() {
+        log.info("📋 Getting supported services list");
+        java.util.List<String> services = strategyFactory.getSupportedServices();
+        log.info("✅ Supported services: {}", services);
+        return ResponseEntity.ok(ApiResponseDto.success(services));
+    }
+
+    @PostMapping("/download")
+    public ResponseEntity<ApiResponseDto<TaskStatusDto>> download(@RequestBody DownloadRequestDto req, HttpServletRequest request) {
+        String ip = getClientIp(request);
+        
+        log.info("⬇️  Download request | IP: {} | URL: {} | Format: {} | Quality: {}", 
+                ip, req.getUrl(), req.getFormatId(), req.getQuality());
+        
+        // Валидация URL
+        if (req.getUrl() == null || req.getUrl().length() > 1000) {
+            log.warn("❌ Invalid URL from {}", ip);
+            return ResponseEntity.badRequest().body(ApiResponseDto.error("Invalid URL", 400));
+        }
+
+        // Проверить, поддерживается ли URL
+        if (!strategyFactory.isSupported(req.getUrl())) {
+            log.warn("❌ Unsupported URL from {}: {}", ip, req.getUrl());
+            return ResponseEntity.badRequest().body(ApiResponseDto.error(
+                    "URL not supported. Please check if the URL is valid and belongs to a supported service.", 400));
+        }
+
+        TaskStatusDto t = queueService.submitDownload(req.getUrl(), ip, req.getFormatId(), req.getQuality());
+        log.info("✅ Download task created | TaskID: {} | Status: {}", t.getTaskId(), t.getStatus());
+        return ResponseEntity.ok(ApiResponseDto.success("Task created", t));
+    }
+
+    @GetMapping("/tasks/{taskId}")
+    public ResponseEntity<ApiResponseDto<TaskStatusDto>> getTask(@PathVariable String taskId, HttpServletRequest request) {
+        String ip = getClientIp(request);
+        log.debug("📊 Get task status | IP: {} | TaskID: {}", ip, taskId);
+        
+        TaskStatusDto t = queueService.getTask(taskId, ip);
+        if (t == null) {
+            log.warn("❌ Task not found | TaskID: {}", taskId);
+            return ResponseEntity.notFound().build();
+        }
+        
+        log.debug("✅ Task found | TaskID: {} | Status: {} | Progress: {}%", 
+                taskId, t.getStatus(), t.getProgress());
+        return ResponseEntity.ok(ApiResponseDto.success(t));
+    }
+
+    @GetMapping("/tasks")
+    public ResponseEntity<ApiResponseDto<Object>> listTasks(HttpServletRequest request) {
+        String ip = getClientIp(request);
+        log.debug("📊 List all tasks | IP: {}", ip);
+        return ResponseEntity.ok(ApiResponseDto.success(queueService.getQueueStatus(ip)));
+    }
+
+    @DeleteMapping("/tasks/{taskId}")
+    public ResponseEntity<ApiResponseDto<Void>> cancel(@PathVariable String taskId, HttpServletRequest request) {
+        String ip = getClientIp(request);
+        log.info("⛔ Cancel task | IP: {} | TaskID: {}", ip, taskId);
+        
+        try {
+            queueService.cancelTask(taskId, ip);
+            log.info("✅ Task cancelled successfully | TaskID: {}", taskId);
+            return ResponseEntity.ok(ApiResponseDto.success(null));
+        } catch (Exception e) {
+            log.error("❌ Failed to cancel task | TaskID: {}", taskId, e);
+            throw e;
+        }
+    }
+
+    @GetMapping("/downloads/{filename}")
+    public ResponseEntity<FileSystemResource> downloadFile(@PathVariable String filename, HttpServletRequest request) {
+        log.debug("📥 Download file request | Filename: {}", filename);
+        
+        if (!storage.fileExists(filename)) {
+            log.warn("❌ File not found | Filename: {} | IP: {}", filename, getClientIp(request));
+            return ResponseEntity.notFound().build();
+        }
+        
+        String clientIp = getClientIp(request);
+        
+        // Check if file belongs to a task completed by current user
+        java.util.List<TaskStatusDto> userTasks = queueService.getQueueStatus(clientIp);
+        boolean hasAccess = userTasks.stream()
+                .anyMatch(task -> task.getFilename() != null && 
+                                 task.getFilename().equals(filename) && 
+                                 "completed".equals(task.getStatus()));
+        
+        if (!hasAccess) {
+            log.warn("🚫 Access denied | Filename: {} | IP: {}", filename, clientIp);
+            return ResponseEntity.status(403).build(); // Forbidden: file doesn't belong to user or not completed
+        }
+        
+        File file = storage.getFile(filename);
+        long fileSize = file.length();
+        log.info("📦 Serving file | Filename: {} | Size: {} bytes | IP: {}", filename, fileSize, clientIp);
+        
+        FileSystemResource resource = new FileSystemResource(file);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())
+                .contentLength(fileSize)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
+    }
+
+    private String extractTaskIdFromFilename(String filename) {
+        // filename format: "dl-<taskId>.ext"
+        if (filename.startsWith("dl-") && filename.contains(".")) {
+            return filename.substring(3, filename.lastIndexOf("."));
+        }
+        return filename;
+    }
+}

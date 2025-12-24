@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
+import { downloadAPI } from '../services/api'
 import ProgressBar from './ProgressBar'
 import '../styles/components/DownloadQueue.css'
 
@@ -192,6 +193,10 @@ const DownloadQueue = () => {
                     </div>
                     
                     <div className="task-info">
+                      <div className="task-title" title={task.title || 'Unknown video'}>
+                        <strong>📹 {task.title || 'Unknown video'}</strong>
+                      </div>
+                      
                       <div className="task-url" title={task.url}>
                         {task.url.substring(0, 50)}...
                       </div>
@@ -275,16 +280,17 @@ const DownloadQueue = () => {
                     </div>
                     
                     <div className="task-info">
-                      <div className="task-filename" title={task.filename}>
-                        📁 {task.filename || 'Unknown file'}
+                      <div className="task-filename" title={task.title || task.filename || 'Unknown'}>
+                        📁 {task.title || task.filename || 'Unknown file'}
                       </div>
                       
                       <div className="task-actions-completed">
                         {task.filename && (
                           <a
-                            href={`/api/downloads/${task.filename}`}
+                            href={downloadAPI.downloadFile(task.filename)}
                             download
                             className="download-link"
+                            title="Download completed file"
                           >
                             <FaDownload /> Download
                           </a>

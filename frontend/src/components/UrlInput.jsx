@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
 import config from '../utils/config'
-import { FaSearch, FaVideo, FaGlobe, FaInfoCircle } from 'react-icons/fa'
+import { FaSearch, FaVideo, FaGlobe, FaInfoCircle, FaYoutube } from 'react-icons/fa'
 import '../styles/components/UrlInput.css'
 
 const UrlInput = () => {
@@ -12,9 +12,19 @@ const UrlInput = () => {
   const [localError, setLocalError] = useState('')
   const [detectedService, setDetectedService] = useState(null)
 
-  const detectService = (inputUrl) => {
-    return config.validation.getServiceByUrl(inputUrl)
-  }
+  const detectService = useMemo(() => {
+    return (inputUrl) => {
+      if (!config.supportedServices || config.supportedServices.length === 0) {
+        return null
+      }
+      return config.supportedServices.find(service => {
+        if (!service || !service.regex) {
+          return false
+        }
+        return service.regex.test(inputUrl)
+      }) || null
+    }
+  }, [])
 
   const validateVideoUrl = (inputUrl) => {
     if (!inputUrl.trim()) {
@@ -55,10 +65,6 @@ const UrlInput = () => {
     const value = e.target.value
     setUrl(value)
     
-    // Detect service in real-time
-    const service = detectService(value)
-    setDetectedService(service)
-    
     // Clear error when user starts typing
     if (localError) {
       const validationError = validateVideoUrl(value)
@@ -67,6 +73,16 @@ const UrlInput = () => {
       }
     }
   }
+
+  // Update detected service when URL changes
+  useEffect(() => {
+    if (url) {
+      const service = detectService(url)
+      setDetectedService(service)
+    } else {
+      setDetectedService(null)
+    }
+  }, [url, detectService])
 
   return (
     <div className="url-input-container">
@@ -81,7 +97,7 @@ const UrlInput = () => {
       <div className="service-detection">
         {detectedService && (
           <div className="detected-service" style={{ borderColor: detectedService.color }}>
-            <detectedService.icon className="service-icon" style={{ color: detectedService.color }} />
+            <FaYoutube className="service-icon" style={{ color: detectedService.color }} />
             <span>{t('urlInput.detectedService').replace('{service}', detectedService.name)}</span>
           </div>
         )}

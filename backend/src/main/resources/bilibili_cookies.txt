@@ -1,0 +1,40 @@
+# Netscape HTTP Cookie File
+# This is a generated file!  Do not edit.
+
+# Add your Bilibili cookies here if needed
+# Format: domain	flag	path	secure	expiration	name	value
+# Netscape HTTP Cookie File
+# https://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file! Do not edit.
+
+.bilibili.com	TRUE	/	FALSE	1772481604	buvid3	D82ACA62-43F1-D5F7-32BF-E0E67D2BEBE904218infoc
+.bilibili.com	TRUE	/	FALSE	1772481604	b_nut	1740945604
+.bilibili.com	TRUE	/	FALSE	1772481604	_uuid	FF7B817C-A421-5B9D-810D7-929C3AACDD10B04789infoc
+.bilibili.com	TRUE	/	FALSE	1792180661	enable_web_push	DISABLE
+.bilibili.com	TRUE	/	FALSE	1800275627	buvid4	8993389B-2BA4-351F-BF30-834C9AA4A1C205097-025030220-vG49vgjKVLxTeBuCrkjRTg%3D%3D
+.bilibili.com	TRUE	/	TRUE	1781265067	DedeUserID	3546624164891552
+.bilibili.com	TRUE	/	FALSE	1781265067	DedeUserID__ckMd5	17739a367b080294
+.bilibili.com	TRUE	/	FALSE	1775505960	rpdid	|(kml~|~))R|0J'u~R|mRlmlm
+.bilibili.com	TRUE	/	FALSE	1772482543	fingerprint	ec8539d3abbe2e0d7eec623e727d863e
+.bilibili.com	TRUE	/	FALSE	1772482543	buvid_fp_plain	undefined
+.bilibili.com	TRUE	/	FALSE	1775506558	buvid_fp	ec8539d3abbe2e0d7eec623e727d863e
+.bilibili.com	TRUE	/	FALSE	1781904848	enable_feed_channel	ENABLE
+.bilibili.com	TRUE	/	FALSE	1787172169	PVID	1
+.bilibili.com	TRUE	/	FALSE	1780001643	hit-dyn-v2	1
+.bilibili.com	TRUE	/	FALSE	1783716386	header_theme_version	OPEN
+.bilibili.com	TRUE	/	FALSE	1797251617	theme-tip-show	SHOWED
+.bilibili.com	TRUE	/	FALSE	1784148252	theme-avatar-tip-show	SHOWED
+www.bilibili.com	FALSE	/	FALSE	0	bmg_af_switch	1
+www.bilibili.com	FALSE	/	FALSE	0	bmg_src_def_domain	i2.hdslb.com
+.bilibili.com	TRUE	/	FALSE	1797250423	home_feed_column	5
+.bilibili.com	TRUE	/	FALSE	1797250457	browser_resolution	1528-708
+.bilibili.com	TRUE	/	FALSE	1767995267	bp_t_offset_3546624164891552	1144887386027589632
+.bilibili.com	TRUE	/	FALSE	1796939366	CURRENT_QUALITY	64
+.bilibili.com	TRUE	/	FALSE	0	b_lsid	1B410828C_19B1CB33212
+.bilibili.com	TRUE	/	FALSE	1765972265	bili_ticket	eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjU5NzIyNjUsImlhdCI6MTc2NTcxMzAwNSwicGx0IjotMX0.d0krYzHreiJ_TCKlcWSCpCVE3h-Q95HbiFjYZUkdGhU
+.bilibili.com	TRUE	/	FALSE	1765972265	bili_ticket_expires	1765972205
+.bilibili.com	TRUE	/	TRUE	1781265067	SESSDATA	90f15bbd%2C1781265066%2Cf3ea8%2Ac2CjBsFf67xRHR8UP5PJFl0LyTfym7rwThsaN6LBI02_0bWvyjofKjXxOqvuuNzP8bSOUSVkNadVd4b2c4a0c2TzlpeW92TmtsaExIeHBsc2NNV3JpYklBaXlFbXdiNkExY1lEU3A3T1hIcXRGdVFfYU1LelJjbWxmREUzdl9SM1piRVJNOGdTUjFRIIEC
+.bilibili.com	TRUE	/	FALSE	1781265067	bili_jct	1db40a42e67cb1349b6f31df25ca9b0b
+.bilibili.com	TRUE	/	FALSE	1797251614	CURRENT_FNVAL	4048
+.bilibili.com	TRUE	/	TRUE	0	timeMachine	0
+.bilibili.com	TRUE	/	FALSE	0	sid	do8r1w6m

@@ -8,7 +8,8 @@ const config = {
       info: '/api/info',
       download: '/api/download',
       tasks: '/api/tasks',
-      cancel: '/api/tasks'
+      cancel: '/api/tasks',
+      services: '/api/services'
     }
   },
   app: {
@@ -20,28 +21,30 @@ const config = {
     maxRetries: 3,
     retryDelay: 1000
   },
-  // Поддерживаемые сервисы
-  supportedServices: [
-    {
-      id: 'youtube',
-      name: 'YouTube',
-      domains: ['youtube.com', 'youtu.be', 'youtube-nocookie.com'],
-      icon: 'FaYoutube',
-      color: '#FF0000',
-      regex: /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/
-    }
-  ],
+  // Поддерживаемые сервисы загружаются с backend
+  supportedServices: [],
   validation: {
     maxUrlLength: 500,
     // Динамически создаем regex из всех поддерживаемых доменов
     getAllowedDomainsRegex: () => {
+      if (config.supportedServices.length === 0) {
+        return new RegExp('(?!)')  // Never match regex
+      }
       const domains = config.supportedServices.flatMap(service => service.domains)
       const escapedDomains = domains.map(domain => domain.replace('.', '\\.'))
       return new RegExp(`^(https?://)?(www\\.)?(${escapedDomains.join('|')})/.+$`)
     },
     // Функция для определения сервиса по URL
     getServiceByUrl: (url) => {
-      return config.supportedServices.find(service => service.regex.test(url))
+      if (!config.supportedServices || config.supportedServices.length === 0) {
+        return null
+      }
+      return config.supportedServices.find(service => {
+        if (!service || !service.regex) {
+          return false
+        }
+        return service.regex.test(url)
+      })
     }
   }
 }

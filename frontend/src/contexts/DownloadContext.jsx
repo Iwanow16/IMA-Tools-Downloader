@@ -49,6 +49,7 @@ export const DownloadProvider = ({ children }) => {
         status: 'pending',
         progress: 0,
         filename: null,
+        title: videoInfo?.title || 'Video', // Добавляем title видео
         error: null,
         createdAt: new Date().toISOString(),
         estimatedTime: null,
@@ -61,7 +62,7 @@ export const DownloadProvider = ({ children }) => {
       setError(err.message);
       throw err;
     }
-  }, []);
+  }, [videoInfo]);
 
   // Update task
   const updateTask = useCallback((taskId, updates) => {
@@ -112,18 +113,32 @@ export const DownloadProvider = ({ children }) => {
       }
 
       setTasks((prev) => {
-        const updated = [...prev];
+        const updated = prev.map(task => ({ ...task })); // Копируем текущие задачи
 
         serverTasks.forEach((serverTask) => {
           const taskId = serverTask.id || serverTask.taskId;
           const idx = updated.findIndex((t) => t.id === taskId);
 
           if (idx >= 0) {
-            // Merge server response with local task, preserving id consistency
-            updated[idx] = { ...updated[idx], ...serverTask, id: taskId };
+            // Обновляем только незавершенные задачи с информацией с сервера
+            // Для завершенных задач используем локальное состояние
+            if (updated[idx].status === 'completed' || updated[idx].status === 'failed' || updated[idx].status === 'cancelled') {
+              // Не перезаписываем статус для завершенных задач
+              updated[idx] = { 
+                ...updated[idx], 
+                ...serverTask, 
+                id: taskId,
+                status: updated[idx].status // Сохраняем локальный статус
+              };
+            } else {
+              // Для активных задач обновляем всю информацию
+              updated[idx] = { ...updated[idx], ...serverTask, id: taskId };
+            }
           } else {
-            // New task from server
-            updated.push({ ...serverTask, id: taskId });
+            // Новая задача от сервера - добавляем только если не завершена
+            if (serverTask.status !== 'completed' && serverTask.status !== 'failed' && serverTask.status !== 'cancelled') {
+              updated.push({ ...serverTask, id: taskId });
+            }
           }
         });
 

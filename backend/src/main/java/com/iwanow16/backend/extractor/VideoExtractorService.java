@@ -35,15 +35,14 @@ public class VideoExtractorService {
 
         // Найти экстрактор для данного URL
         for (VideoExtractor extractor : extractors) {
-            if (extractor.getServiceName().equalsIgnoreCase("youtube") && 
-                (url.contains("youtube.com") || url.contains("youtu.be"))) {
+            if (extractor.supports(url)) {
+                log.debug("Using extractor: {} for URL: {}", extractor.getServiceName(), url);
                 return extractor.extractInfo(url);
             }
         }
 
         // Если ничего не нашли, выбросить исключение
-        throw new IllegalArgumentException("No extractor found for URL. Supported services: " + 
-                strategyFactory.getSupportedServices());
+        throw new IllegalArgumentException("No extractor found for URL. Please check if the URL is valid and belongs to a supported service.");
     }
 
     /**

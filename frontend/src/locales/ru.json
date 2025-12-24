@@ -79,8 +79,11 @@
     "count": "Поддерживается {count} платформ",
     "clickToCopy": "Нажмите, чтобы скопировать домен",
     "copied": "Домен скопирован!",
+    "noServicesAvailable": "Поддерживаемые сервисы недоступны",
+    "noServicesDescription": "Не удалось загрузить список поддерживаемых сервисов с сервера. Пожалуйста, попробуйте позже.",
     "serviceDetails": {
-      "youtube": "YouTube - Видео, shorts, трансляции"
+      "youtube": "YouTube - Видео, shorts, трансляции",
+      "bilibili": "Bilibili - Китайская платформа видеоконтента"
     }
   },
   "stats": {

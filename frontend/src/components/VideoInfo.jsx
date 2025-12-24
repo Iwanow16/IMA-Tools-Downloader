@@ -98,6 +98,24 @@ const VideoInfo = () => {
     return <FaVideo />
   }
 
+  const getFormatLabel = (format) => {
+    // Определяем тип формата
+    let type = 'Video + Audio'
+    if (format.vcodec === 'none') {
+      type = 'Audio Only'
+    } else if (format.acodec === 'none') {
+      type = 'Video Only'
+    }
+    
+    // Получаем качество
+    let quality = format.quality || format.resolution || format.format_note || 'Unknown Quality'
+    
+    return {
+      type,
+      quality: quality.toString().trim() || 'Unknown Quality'
+    }
+  }
+
   return (
     <div className="video-info-container">
       <div className="video-info-header">
@@ -149,57 +167,63 @@ const VideoInfo = () => {
       {videoInfo.formats && videoInfo.formats.length > 0 ? (
         <>
           <div className="formats-grid">
-            {videoInfo.formats.map((format) => (
-              <div
-                key={format.format_id}
-                className={`format-card ${selectedFormat?.format_id === format.format_id ? 'selected' : ''}`}
-                onClick={() => handleFormatSelect(format)}
-              >
-                <div className="format-icon">
-                  {getFormatIcon(format)}
-                </div>
-                
-                <div className="format-details">
-                  <div className="format-quality">
-                    {format.quality || format.resolution || 'Unknown quality'}
+            {videoInfo.formats.map((format) => {
+              const { type, quality } = getFormatLabel(format)
+              return (
+                <div
+                  key={format.format_id}
+                  className={`format-card ${selectedFormat?.format_id === format.format_id ? 'selected' : ''}`}
+                  onClick={() => handleFormatSelect(format)}
+                >
+                  <div className="format-icon">
+                    {getFormatIcon(format)}
                   </div>
                   
-                  <div className="format-info">
-                    <span className="format-extension">
-                      {format.ext?.toUpperCase() || 'Unknown'}
-                    </span>
+                  <div className="format-details">
+                    <div className="format-quality">
+                      {quality}
+                    </div>
                     
-                    <span className="format-size">
-                      {formatFileSize(format.filesize)}
-                    </span>
+                    <div className="format-type">
+                      {type}
+                    </div>
+                    
+                    <div className="format-info">
+                      <span className="format-extension">
+                        {format.ext?.toUpperCase() || 'Unknown'}
+                      </span>
+                      
+                      <span className="format-size">
+                        {formatFileSize(format.filesize)}
+                      </span>
+                    </div>
                   </div>
                   
-                  {format.note && (
-                    <div className="format-note">{format.note}</div>
+                  {selectedFormat?.format_id === format.format_id && (
+                    <div className="format-check">
+                      <FaCheck />
+                    </div>
                   )}
                 </div>
-                
-                {selectedFormat?.format_id === format.format_id && (
-                  <div className="format-check">
-                    <FaCheck />
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="download-section">
             <div className="selected-format-info">
-              {selectedFormat && (
-                <>
-                  <span>{t('videoInfo.selectFormat')}: </span>
-                  <strong>
-                    {selectedFormat.quality || selectedFormat.resolution} • 
-                    {selectedFormat.ext?.toUpperCase()} • 
-                    {formatFileSize(selectedFormat.filesize)}
-                  </strong>
-                </>
-              )}
+              {selectedFormat && (() => {
+                const { type, quality } = getFormatLabel(selectedFormat)
+                return (
+                  <>
+                    <span>{t('videoInfo.selectFormat')}: </span>
+                    <strong>
+                      {quality} • {type} • 
+                      {selectedFormat.ext?.toUpperCase()} • 
+                      {formatFileSize(selectedFormat.filesize)}
+                    </strong>
+                  </>
+                )
+              })()}
             </div>
             
             <button

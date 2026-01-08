@@ -1,8 +1,10 @@
 package com.iwanow16.backend.service.strategy;
 
 import com.iwanow16.backend.util.MediaMerger;
+import com.iwanow16.backend.util.FrameExtractorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +25,9 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
 
     @Value("${app.youtube.js-runtime:node}")
     private String jsRuntime;
+
+    @Autowired
+    private FrameExtractorUtil frameExtractorUtil;
 
     @Override
     public boolean supports(String url) {
@@ -201,6 +206,184 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
         log.error("❌ Downloaded file not found | TaskID: {} | VideoID: {} | Duration: {}ms", 
                 taskId, videoId, duration);
         throw new RuntimeException("Downloaded file not found in output directory");
+    }
+
+    @Override
+    public Path downloadTimeRange(String url, Path outputDir, String formatId, String taskId,
+                                  String startTime, String endTime) throws Exception {
+        log.info("⏱️  YouTube download with time range | TaskID: {} | Start: {}s | End: {}s", 
+                taskId, startTime, endTime);
+        
+        // Сначала скачиваем полное видео
+        Path fullVideoPath = download(url, outputDir, formatId, taskId);
+        
+        // Затем вырезаем нужный диапазон
+        List<String> cmd = new ArrayList<>();
+        cmd.add("ffmpeg");
+        cmd.add("-i");
+        cmd.add(fullVideoPath.toString());
+        cmd.add("-ss");
+        cmd.add(startTime);
+        cmd.add("-to");
+        cmd.add(endTime);
+        cmd.add("-c");
+        cmd.add("copy");  // Копируем без перекодирования для скорости
+        
+        // Генерируем имя выходного файла
+        String filename = "trimmed_" + System.currentTimeMillis() + ".mp4";
+        Path outputPath = outputDir.resolve(filename);
+        cmd.add(outputPath.toString());
+
+        log.debug("⏳ Executing ffmpeg trim command | TaskID: {}", taskId);
+        
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+
+        StringBuilder output = new StringBuilder();
+        try (var reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+                log.debug("📊 ffmpeg output | TaskID: {} | {}", taskId, line);
+            }
+        }
+
+        int exitCode = p.waitFor();
+        
+        if (exitCode != 0) {
+            log.error("❌ Time range extraction failed | TaskID: {} | Exit code: {}", taskId, exitCode);
+            throw new RuntimeException("Failed to extract time range");
+        }
+
+        log.info("✅ Time range extraction completed | TaskID: {} | File: {}", taskId, filename);
+        return outputPath;
+    }
+
+    @Override
+    public Path extractFrame(String url, Path outputDir, String taskId, String frameTime) throws Exception {
+        log.info("📷 YouTube frame extraction | TaskID: {} | Frame time: {}s", taskId, frameTime);
+        
+        // Сначала загрузим видео в формате, с которым может работать ffmpeg
+        // Используем лучший доступный формат (обычно 720p или выше)
+        String tempVideoFile = "temp_" + System.currentTimeMillis() + ".mp4";
+        Path tempVideoPath = outputDir.resolve(tempVideoFile);
+
+        log.debug("⏳ Downloading video for frame extraction | TaskID: {} | Temp file: {}", 
+                taskId, tempVideoFile);
+
+        // Используем yt-dlp для загрузки лучшего видеоформата
+        List<String> downloadCmd = new ArrayList<>();
+        downloadCmd.add("yt-dlp");
+        downloadCmd.add("-f");
+        downloadCmd.add("b");  // Лучший доступный формат (без предупреждения)
+        downloadCmd.add("-o");
+        downloadCmd.add(tempVideoPath.toString());
+        downloadCmd.add(url);
+
+        log.debug("⏳ Executing yt-dlp download | TaskID: {}", taskId);
+        ProcessBuilder pb = new ProcessBuilder(downloadCmd);
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+
+        StringBuilder output = new StringBuilder();
+        try (var reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+                log.debug("📥 Download output | TaskID: {} | {}", taskId, line);
+            }
+        }
+
+        int exitCode = p.waitFor();
+        if (exitCode != 0) {
+            log.error("❌ Failed to download video for frame extraction | TaskID: {} | Error: {}", 
+                    taskId, output);
+            throw new RuntimeException("Failed to download video for frame extraction");
+        }
+
+        if (!java.nio.file.Files.exists(tempVideoPath)) {
+            log.error("❌ Temp video file not created | TaskID: {}", taskId);
+            throw new RuntimeException("Temp video file not created");
+        }
+
+        log.debug("✅ Video downloaded | TaskID: {} | File: {}", taskId, tempVideoFile);
+
+        // Теперь извлекаем кадр из локального файла
+        List<String> ffmpegCmd = new ArrayList<>();
+        ffmpegCmd.add("ffmpeg");
+        ffmpegCmd.add("-ss");
+        ffmpegCmd.add(frameTime);
+        ffmpegCmd.add("-i");
+        ffmpegCmd.add(tempVideoPath.toString());
+        ffmpegCmd.add("-vframes");
+        ffmpegCmd.add("1");
+        ffmpegCmd.add("-q:v");
+        ffmpegCmd.add("2");  // Высокое качество
+        ffmpegCmd.add("-f");
+        ffmpegCmd.add("image2");
+
+        String frameFilename = "frame_" + System.currentTimeMillis() + ".png";
+        Path outputPath = outputDir.resolve(frameFilename);
+        ffmpegCmd.add(outputPath.toString());
+
+        log.debug("⏳ Extracting frame with ffmpeg | TaskID: {} | Output: {}", taskId, frameFilename);
+
+        pb = new ProcessBuilder(ffmpegCmd);
+        pb.redirectErrorStream(true);
+        p = pb.start();
+
+        output = new StringBuilder();
+        try (var reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+                log.debug("📊 ffmpeg output | TaskID: {} | {}", taskId, line);
+            }
+        }
+
+        exitCode = p.waitFor();
+        
+        if (exitCode != 0) {
+            log.error("❌ Frame extraction failed | TaskID: {} | Exit code: {} | Output: {}", 
+                    taskId, exitCode, output);
+            // Очистим временный файл перед выбросом ошибки
+            try {
+                java.nio.file.Files.deleteIfExists(tempVideoPath);
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to delete temp video file | TaskID: {} | File: {}", 
+                        taskId, tempVideoPath);
+            }
+            throw new RuntimeException("Failed to extract frame: " + output);
+        }
+
+        if (!java.nio.file.Files.exists(outputPath)) {
+            log.error("❌ Frame file not created | TaskID: {} | Expected: {}", taskId, outputPath);
+            try {
+                java.nio.file.Files.deleteIfExists(tempVideoPath);
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to delete temp video file | TaskID: {} | File: {}", 
+                        taskId, tempVideoPath);
+            }
+            throw new RuntimeException("Frame extraction failed: output file not created");
+        }
+
+        // Удаляем временный файл
+        try {
+            java.nio.file.Files.deleteIfExists(tempVideoPath);
+            log.debug("🗑️ Temp video file deleted | TaskID: {} | File: {}", taskId, tempVideoFile);
+        } catch (Exception e) {
+            log.warn("⚠️ Failed to delete temp video file | TaskID: {} | File: {}", 
+                    taskId, tempVideoPath);
+        }
+
+        long fileSize = java.nio.file.Files.size(outputPath);
+        log.info("✅ Frame extracted successfully | TaskID: {} | File: {} | Size: {} bytes", 
+                taskId, frameFilename, fileSize);
+        return outputPath;
     }
 
     /**

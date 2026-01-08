@@ -230,6 +230,28 @@
   margin-top: var(--spacing-xs);
 }
 
+.frame-extraction-info {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: var(--radius-md);
+  border: 1px dashed #3b82f6;
+  text-align: center;
+}
+
+.frame-extraction-info span {
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
+.frame-extraction-info strong {
+  color: #3b82f6;
+  font-size: var(--font-base);
+  font-weight: 600;
+  display: block;
+  margin-top: var(--spacing-xs);
+}
+
 .download-button {
   width: 100%;
   padding: var(--spacing-lg);

@@ -73,8 +73,9 @@ public class DownloadController {
     public ResponseEntity<ApiResponseDto<TaskStatusDto>> download(@RequestBody DownloadRequestDto req, HttpServletRequest request) {
         String ip = getClientIp(request);
         
-        log.info("⬇️  Download request | IP: {} | URL: {} | Format: {} | Quality: {}", 
-                ip, req.getUrl(), req.getFormatId(), req.getQuality());
+        log.info("⬇️  Download request | IP: {} | URL: {} | Format: {} | Quality: {} | TimeRange: {} | Frame: {}", 
+                ip, req.getUrl(), req.getFormatId(), req.getQuality(), 
+                req.isTimeRangeEnabled(), req.isFrameExtractionEnabled());
         
         // Валидация URL
         if (req.getUrl() == null || req.getUrl().length() > 1000) {
@@ -89,7 +90,11 @@ public class DownloadController {
                     "URL not supported. Please check if the URL is valid and belongs to a supported service.", 400));
         }
 
-        TaskStatusDto t = queueService.submitDownload(req.getUrl(), ip, req.getFormatId(), req.getQuality());
+        TaskStatusDto t = queueService.submitDownloadWithOptions(
+                req.getUrl(), ip, req.getFormatId(), req.getQuality(),
+                req.isTimeRangeEnabled(), req.getStartTime(), req.getEndTime(),
+                req.isFrameExtractionEnabled(), req.getFrameTime());
+        
         log.info("✅ Download task created | TaskID: {} | Status: {}", t.getTaskId(), t.getStatus());
         return ResponseEntity.ok(ApiResponseDto.success("Task created", t));
     }

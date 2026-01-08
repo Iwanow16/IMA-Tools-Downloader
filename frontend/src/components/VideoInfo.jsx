@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDownload } from '../contexts/DownloadContext'
+import DownloadOptions from './DownloadOptions'
 import config from '../utils/config'
 import '../styles/components/VideoInfo.css'
 import { 
@@ -20,8 +21,12 @@ const VideoInfo = () => {
     selectedFormat, 
     setSelectedFormat, 
     startDownload,
-    tasks 
+    tasks,
+    resetDownloadOptions,
+    downloadOptions
   } = useDownload()
+  
+  const [optionsOpen, setOptionsOpen] = useState(false)
   
   const { isDownloading, downloaded } = useMemo(() => {
     if (!videoInfo || !videoInfo.url) {
@@ -79,16 +84,32 @@ const VideoInfo = () => {
   }
 
   const handleDownload = async () => {
-    if (!selectedFormat || !videoInfo.url) return
+    if (!videoInfo.url) return
     
-    try {
-      await startDownload(
-        videoInfo.url,
-        selectedFormat.format_id,
-        selectedFormat.quality || selectedFormat.resolution
-      )
-    } catch (error) {
-      console.error('Download failed:', error)
+    // Если режим извлечения кадра, не требуется выбор формата
+    if (downloadOptions.frameExtractionEnabled) {
+      if (!downloadOptions.frameTime) return
+      try {
+        await startDownload(
+          videoInfo.url,
+          null,  // No format needed for frame extraction
+          null   // No quality needed for frame extraction
+        )
+      } catch (error) {
+        console.error('Download failed:', error)
+      }
+    } else {
+      // Обычный режим загрузки - нужен формат
+      if (!selectedFormat) return
+      try {
+        await startDownload(
+          videoInfo.url,
+          selectedFormat.format_id,
+          selectedFormat.quality || selectedFormat.resolution
+        )
+      } catch (error) {
+        console.error('Download failed:', error)
+      }
     }
   }
 
@@ -166,70 +187,85 @@ const VideoInfo = () => {
 
       {videoInfo.formats && videoInfo.formats.length > 0 ? (
         <>
-          <div className="formats-grid">
-            {videoInfo.formats.map((format) => {
-              const { type, quality } = getFormatLabel(format)
-              return (
-                <div
-                  key={format.format_id}
-                  className={`format-card ${selectedFormat?.format_id === format.format_id ? 'selected' : ''}`}
-                  onClick={() => handleFormatSelect(format)}
-                >
-                  <div className="format-icon">
-                    {getFormatIcon(format)}
-                  </div>
-                  
-                  <div className="format-details">
-                    <div className="format-quality">
-                      {quality}
+          {!downloadOptions.frameExtractionEnabled && (
+            <div className="formats-grid">
+              {videoInfo.formats.map((format) => {
+                const { type, quality } = getFormatLabel(format)
+                return (
+                  <div
+                    key={format.format_id}
+                    className={`format-card ${selectedFormat?.format_id === format.format_id ? 'selected' : ''}`}
+                    onClick={() => handleFormatSelect(format)}
+                  >
+                    <div className="format-icon">
+                      {getFormatIcon(format)}
                     </div>
                     
-                    <div className="format-type">
-                      {type}
-                    </div>
-                    
-                    <div className="format-info">
-                      <span className="format-extension">
-                        {format.ext?.toUpperCase() || 'Unknown'}
-                      </span>
+                    <div className="format-details">
+                      <div className="format-quality">
+                        {quality}
+                      </div>
                       
-                      <span className="format-size">
-                        {formatFileSize(format.filesize)}
-                      </span>
+                      <div className="format-type">
+                        {type}
+                      </div>
+                      
+                      <div className="format-info">
+                        <span className="format-extension">
+                          {format.ext?.toUpperCase() || 'Unknown'}
+                        </span>
+                        
+                        <span className="format-size">
+                          {formatFileSize(format.filesize)}
+                        </span>
+                      </div>
                     </div>
+                    
+                    {selectedFormat?.format_id === format.format_id && (
+                      <div className="format-check">
+                        <FaCheck />
+                      </div>
+                    )}
                   </div>
-                  
-                  {selectedFormat?.format_id === format.format_id && (
-                    <div className="format-check">
-                      <FaCheck />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
 
           <div className="download-section">
-            <div className="selected-format-info">
-              {selectedFormat && (() => {
-                const { type, quality } = getFormatLabel(selectedFormat)
-                return (
-                  <>
-                    <span>{t('videoInfo.selectFormat')}: </span>
-                    <strong>
-                      {quality} • {type} • 
-                      {selectedFormat.ext?.toUpperCase()} • 
-                      {formatFileSize(selectedFormat.filesize)}
-                    </strong>
-                  </>
-                )
-              })()}
-            </div>
+            <DownloadOptions 
+              isOpen={optionsOpen} 
+              onToggle={() => setOptionsOpen(!optionsOpen)}
+              videoDuration={videoInfo?.duration}
+            />
+
+            {downloadOptions.frameExtractionEnabled ? (
+              <div className="frame-extraction-info">
+                <span>{t('downloadOptions.frameExtraction')}: </span>
+                <strong>{downloadOptions.frameTime}s</strong>
+              </div>
+            ) : (
+              <div className="selected-format-info">
+                {selectedFormat && (() => {
+                  const { type, quality } = getFormatLabel(selectedFormat)
+                  return (
+                    <>
+                      <span>{t('videoInfo.selectFormat')}: </span>
+                      <strong>
+                        {quality} • {type} • 
+                        {selectedFormat.ext?.toUpperCase()} • 
+                        {formatFileSize(selectedFormat.filesize)}
+                      </strong>
+                    </>
+                  )
+                })()}
+              </div>
+            )}
             
             <button
               onClick={handleDownload}
               className="download-button"
-              disabled={!selectedFormat || isDownloading}
+              disabled={(!selectedFormat && !downloadOptions.frameExtractionEnabled) || isDownloading}
             >
               {isDownloading ? (
                 <>

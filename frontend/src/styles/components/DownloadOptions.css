@@ -1,0 +1,199 @@
+@import '../utils/variables.css';
+
+.download-options-container {
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--input-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-color);
+  animation: slideInDown 0.3s ease;
+}
+
+.options-toggle {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.options-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--primary-color);
+}
+
+.options-toggle svg {
+  font-size: var(--font-base);
+  transition: transform 0.3s ease;
+}
+
+.options-content {
+  padding: var(--spacing-lg);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  animation: slideDown 0.3s ease;
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.option-label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.option-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s ease;
+}
+
+.option-label:hover .option-header {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.option-checkbox {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+}
+
+.option-icon {
+  color: var(--primary-color);
+  font-size: var(--font-base);
+  flex-shrink: 0;
+}
+
+.option-header span {
+  color: var(--text-primary);
+  font-weight: 500;
+  flex: 1;
+}
+
+.option-inputs {
+  padding: var(--spacing-md);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  animation: slideDown 0.2s ease;
+}
+
+.time-input-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.time-input-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.time-input-field label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.time-input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-base);
+  transition: all 0.2s ease;
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(66, 135, 245, 0.1);
+  background-color: var(--input-bg);
+}
+
+.time-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.validation-error {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+  color: #ef4444;
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+.duration-info {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-md);
+  color: #3b82f6;
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .options-toggle {
+    padding: var(--spacing-md);
+  }
+
+  .options-content {
+    padding: var(--spacing-md);
+  }
+
+  .time-input-group {
+    grid-template-columns: 1fr;
+  }
+
+  .option-inputs {
+    padding: var(--spacing-md);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

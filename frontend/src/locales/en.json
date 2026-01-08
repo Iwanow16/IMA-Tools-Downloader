@@ -91,5 +91,16 @@
     "activeDownloads": "Active Downloads",
     "queueLength": "Queue Length",
     "supportedPlatforms": "Supported Platforms"
+  },
+  "downloadOptions": {
+    "title": "Download Options",
+    "timeRange": "Download Time Range",
+    "enableTimeRange": "Download specific time range",
+    "startTime": "Start time (seconds)",
+    "endTime": "End time (seconds)",
+    "frameExtraction": "Extract Frame",
+    "enableFrameExtraction": "Extract a frame from video",
+    "frameTime": "Frame time (seconds)",
+    "hint": "Enter time in seconds (e.g., 0 for start, 30 for 30 seconds)"
   }
 }

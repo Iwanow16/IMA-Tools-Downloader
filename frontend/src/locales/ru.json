@@ -91,5 +91,16 @@
     "activeDownloads": "Активных загрузок",
     "queueLength": "Длина очереди",
     "supportedPlatforms": "Поддерживаемых платформ"
+  },
+  "downloadOptions": {
+    "title": "Параметры загрузки",
+    "timeRange": "Диапазон времени",
+    "enableTimeRange": "Скачать фрагмент видео",
+    "startTime": "Время начала (сек)",
+    "endTime": "Время конца (сек)",
+    "frameExtraction": "Извлечение кадра",
+    "enableFrameExtraction": "Извлечь кадр из видео",
+    "frameTime": "Время кадра (сек)",
+    "hint": "Введите время в секундах (например, 0 для начала, 30 для 30 секунд)"
   }
 }

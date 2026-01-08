@@ -61,12 +61,17 @@ export const downloadAPI = {
   },
 
   // Start download
-  startDownload: async (url, formatId, quality) => {
+  startDownload: async (url, formatId, quality, downloadOptions = {}) => {
     try {
       const response = await api.post(config.api.endpoints.download, {
         url,
         formatId,
-        quality
+        quality,
+        timeRangeEnabled: downloadOptions.timeRangeEnabled || false,
+        startTime: downloadOptions.startTime || null,
+        endTime: downloadOptions.endTime || null,
+        frameExtractionEnabled: downloadOptions.frameExtractionEnabled || false,
+        frameTime: downloadOptions.frameTime || null
       })
       return response.data?.data || response.data
     } catch (error) {
@@ -113,6 +118,17 @@ export const downloadAPI = {
   // Download file
   downloadFile: (filename) => {
     return `${config.api.baseUrl}/api/downloads/${filename}`
+  },
+
+  // Trigger file download (stays on page)
+  triggerDownload: (filename) => {
+    const url = `${config.api.baseUrl}/api/downloads/${filename}`
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 }
 

@@ -286,14 +286,13 @@ const DownloadQueue = () => {
                       
                       <div className="task-actions-completed">
                         {task.filename && (
-                          <a
-                            href={downloadAPI.downloadFile(task.filename)}
-                            download
+                          <button
+                            onClick={() => downloadAPI.triggerDownload(task.filename)}
                             className="download-link"
                             title="Download completed file"
                           >
                             <FaDownload /> Download
-                          </a>
+                          </button>
                         )}
                         
                         <button

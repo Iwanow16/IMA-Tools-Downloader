@@ -42,8 +42,15 @@ public class DownloadQueueService {
     }
 
     public TaskStatusDto submitDownload(String url, String clientIp, String formatId, String quality) {
+        return submitDownloadWithOptions(url, clientIp, formatId, quality, false, null, null, false, null);
+    }
+
+    public TaskStatusDto submitDownloadWithOptions(String url, String clientIp, String formatId, String quality,
+                                                   boolean timeRangeEnabled, String startTime, String endTime,
+                                                   boolean frameExtractionEnabled, String frameTime) {
         String id = UUID.randomUUID().toString();
-        log.info("📥 New download submitted | TaskID: {} | Format: {} | Quality: {} | IP: {}", id, formatId, quality, clientIp);
+        log.info("📥 New download submitted | TaskID: {} | Format: {} | Quality: {} | IP: {} | TimeRange: {} | Frame: {}", 
+                id, formatId, quality, clientIp, timeRangeEnabled, frameExtractionEnabled);
         
         TaskStatusDto t = new TaskStatusDto();
         t.setTaskId(id);
@@ -56,15 +63,22 @@ public class DownloadQueueService {
         t.setCreatedAt(OffsetDateTime.now());
         tasks.put(id, t);
 
-        executor.submit(() -> runDownloadTask(id, url, clientIp, formatId, quality));
+        executor.submit(() -> runDownloadTask(id, url, clientIp, formatId, quality, 
+                timeRangeEnabled, startTime, endTime, frameExtractionEnabled, frameTime));
         log.debug("⏳ Task queued for processing | TaskID: {}", id);
         return t;
     }
 
     private void runDownloadTask(String taskId, String url, String clientIp, String formatId, String quality) {
+        runDownloadTask(taskId, url, clientIp, formatId, quality, false, null, null, false, null);
+    }
+
+    private void runDownloadTask(String taskId, String url, String clientIp, String formatId, String quality,
+                                boolean timeRangeEnabled, String startTime, String endTime,
+                                boolean frameExtractionEnabled, String frameTime) {
         Semaphore ipSem = ipSemaphores.computeIfAbsent(clientIp, k -> new Semaphore(props.getMaxConcurrentPerIp()));
         TaskStatusDto t = tasks.get(taskId);
-        long startTime = System.currentTimeMillis();
+        long taskStartTime = System.currentTimeMillis();
         
         try {
             log.debug("⏳ Acquiring semaphores for TaskID: {} | IP: {}", taskId, clientIp);
@@ -77,10 +91,25 @@ public class DownloadQueueService {
             DownloadStrategy strategy = strategyFactory.getStrategy(url);
             log.debug("🎬 Using strategy: {} | TaskID: {}", strategy.getServiceName(), taskId);
 
-            // Скачать файл
+            // Скачать файл в зависимости от опций
             Path downloadDir = storage.getStorageDir();
             long downloadStartTime = System.currentTimeMillis();
-            Path downloadedFile = strategy.download(url, downloadDir, formatId, taskId);
+            Path downloadedFile;
+
+            if (frameExtractionEnabled && frameTime != null) {
+                // Извлечение кадра
+                log.info("📷 Extracting frame | TaskID: {} | Time: {}s", taskId, frameTime);
+                downloadedFile = strategy.extractFrame(url, downloadDir, taskId, frameTime);
+            } else if (timeRangeEnabled && startTime != null && endTime != null) {
+                // Загрузка временного диапазона
+                log.info("⏱️  Downloading time range | TaskID: {} | From: {}s | To: {}s", 
+                        taskId, startTime, endTime);
+                downloadedFile = strategy.downloadTimeRange(url, downloadDir, formatId, taskId, startTime, endTime);
+            } else {
+                // Обычная загрузка полного видео
+                downloadedFile = strategy.download(url, downloadDir, formatId, taskId);
+            }
+
             long downloadDuration = System.currentTimeMillis() - downloadStartTime;
 
             // Сохранить информацию о файле
@@ -89,12 +118,12 @@ public class DownloadQueueService {
             t.setStatus("completed");
             t.setProgress(100);
             t.setCompletedAt(OffsetDateTime.now());
-            long totalDuration = System.currentTimeMillis() - startTime;
+            long totalDuration = System.currentTimeMillis() - taskStartTime;
             log.info("✅ Download completed | TaskID: {} | Filename: {} | Download: {}ms | Total: {}ms", 
                     taskId, filename, downloadDuration, totalDuration);
 
         } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
+            long duration = System.currentTimeMillis() - taskStartTime;
             log.error("❌ Download failed | TaskID: {} | Duration: {}ms | Error: {}", taskId, duration, e.getMessage(), e);
             t.setStatus("failed");
             t.setProgress(0);

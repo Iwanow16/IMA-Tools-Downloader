@@ -17,6 +17,34 @@ export const DownloadProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedFormat, setSelectedFormat] = useState(null);
+  
+  // Download options state
+  const [downloadOptions, setDownloadOptions] = useState({
+    timeRangeEnabled: false,
+    startTime: '',
+    endTime: '',
+    frameExtractionEnabled: false,
+    frameTime: ''
+  });
+
+  // Update download options
+  const updateDownloadOption = useCallback((optionKey, value) => {
+    setDownloadOptions((prev) => ({
+      ...prev,
+      [optionKey]: value
+    }));
+  }, []);
+
+  // Reset download options
+  const resetDownloadOptions = useCallback(() => {
+    setDownloadOptions({
+      timeRangeEnabled: false,
+      startTime: '',
+      endTime: '',
+      frameExtractionEnabled: false,
+      frameTime: ''
+    });
+  }, []);
 
   // Fetch video info
   const fetchVideoInfo = useCallback(async (url) => {
@@ -39,7 +67,7 @@ export const DownloadProvider = ({ children }) => {
   // Start download
   const startDownload = useCallback(async (url, formatId, quality) => {
     try {
-      const response = await downloadAPI.startDownload(url, formatId, quality);
+      const response = await downloadAPI.startDownload(url, formatId, quality, downloadOptions);
 
       const newTask = {
         id: response.id || response.taskId,
@@ -53,7 +81,8 @@ export const DownloadProvider = ({ children }) => {
         error: null,
         createdAt: new Date().toISOString(),
         estimatedTime: null,
-        downloadSpeed: null
+        downloadSpeed: null,
+        downloadOptions: downloadOptions // Сохраняем опции в задачу
       };
 
       setTasks((prev) => [...prev, newTask]);
@@ -62,7 +91,7 @@ export const DownloadProvider = ({ children }) => {
       setError(err.message);
       throw err;
     }
-  }, [videoInfo]);
+  }, [videoInfo, downloadOptions]);
 
   // Update task
   const updateTask = useCallback((taskId, updates) => {
@@ -164,7 +193,10 @@ export const DownloadProvider = ({ children }) => {
     removeTask,
     clearCompleted,
     refreshTasks,
-    setError
+    setError,
+    downloadOptions,
+    updateDownloadOption,
+    resetDownloadOptions
   };
 
   return (

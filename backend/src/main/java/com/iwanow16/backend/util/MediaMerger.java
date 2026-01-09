@@ -27,9 +27,9 @@ public class MediaMerger {
      * @throws Exception если объединение не удалось
      */
     public static Path mergeVideoAudio(Path videoFile, Path audioFile, Path outputFile, String taskId) throws Exception {
-        // Если нет аудиофайла, просто копируем видео
+        // If no audio file, just copy video
         if (audioFile == null || !Files.exists(audioFile)) {
-            log.info("⚠️ No audio file provided, using video only | TaskID: {}", taskId);
+            log.info("No audio file provided, using video only | TaskID: {}", taskId);
             if (!Files.exists(videoFile)) {
                 throw new RuntimeException("Video file not found: " + videoFile);
             }
@@ -37,9 +37,9 @@ public class MediaMerger {
             return outputFile;
         }
 
-        // Если видеофайл не существует, копируем аудио
+        // If video file doesn't exist, copy audio
         if (!Files.exists(videoFile)) {
-            log.info("⚠️ No video file found, using audio only | TaskID: {}", taskId);
+            log.info("No video file found, using audio only | TaskID: {}", taskId);
             Files.copy(audioFile, outputFile);
             return outputFile;
         }

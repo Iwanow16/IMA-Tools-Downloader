@@ -41,9 +41,9 @@ public class BilibiliVideoExtractor implements VideoExtractor {
         if (cookieFile.exists() && cookieFile.length() > 100) {
             cmd.add("--cookies");
             cmd.add(cookiesPath);
-            log.debug("🍪 Using cookies file | URL: {}", url);
+            log.debug("Using cookies file | URL: {}", url);
         } else {
-            log.debug("⚠️ Cookies file not found or empty, proceeding without cookies | URL: {}", url);
+            log.debug("Cookies file not found or empty, proceeding without cookies | URL: {}", url);
         }
         
         cmd.add("--no-check-certificate");
@@ -59,19 +59,19 @@ public class BilibiliVideoExtractor implements VideoExtractor {
 
         StringBuilder out = new StringBuilder();
         long startTime = System.currentTimeMillis();
-        log.debug("⏳ Running yt-dlp command for Bilibili...");
+        log.debug("Running yt-dlp command for Bilibili...");
         
         int rc = ProcessExecutor.run(cmd, 30, out);
         long duration = System.currentTimeMillis() - startTime;
         
         if (rc != 0) {
             String errorOutput = out.toString();
-            log.error("❌ yt-dlp failed with code {}: {} (Duration: {}ms)", rc, errorOutput, duration);
+            log.error("yt-dlp failed with code {}: {} (Duration: {}ms)", rc, errorOutput, duration);
             throw new RuntimeException("yt-dlp failed with code " + rc + ": " + errorOutput);
         }
         
         String jsonOutput = out.toString();
-        log.debug("📊 yt-dlp output length: {} bytes | Duration: {}ms", jsonOutput.length(), duration);
+        log.debug("yt-dlp output length: {} bytes | Duration: {}ms", jsonOutput.length(), duration);
         
         try {
             JsonNode rootNode = mapper.readTree(jsonOutput);
@@ -157,11 +157,11 @@ public class BilibiliVideoExtractor implements VideoExtractor {
             formats = FormatEnhancer.enhanceFormats(formats, "bilibili");
             
             info.setFormats(formats);
-            log.info("✅ Successfully extracted video info | Title: {} | Duration: {}s | Formats: {} | Duration: {}ms", 
+            log.info("Successfully extracted video info | Title: {} | Duration: {}s | Formats: {} | Duration: {}ms", 
                     info.getTitle(), info.getDurationSeconds(), formats.size(), duration);
             return info;
         } catch (Exception e) {
-            log.error("❌ Failed to parse yt-dlp output: {}", e.getMessage(), e);
+            log.error("Failed to parse yt-dlp output: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to parse video info: " + e.getMessage(), e);
         }
     }

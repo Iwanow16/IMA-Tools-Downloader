@@ -122,6 +122,7 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
+                    parseAndUpdateProgress(taskId, line);
                     log.debug("📊 yt-dlp output | TaskID: {} | {}", taskId, line);
                 }
             } catch (Exception e) {
@@ -466,7 +467,7 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
     }
 
     /**
-     * Парсить прогресс из вывода yt-dlp и вызвать callback
+     * Parse progress from yt-dlp output and call callback
      */
     private void parseAndUpdateProgress(String taskId, String line) {
         if (progressCallback == null) {
@@ -474,20 +475,20 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
         }
         
         try {
-            // Парсим прогресс: [download] 45.3%
+            // Parse progress: [download] 45.3%
             Matcher progressMatcher = PROGRESS_PATTERN.matcher(line);
             if (progressMatcher.find()) {
                 double percent = Double.parseDouble(progressMatcher.group(1));
                 int progress = (int) percent;
                 
-                // Парсим скорость: at 5.23MB/s
+                // Parse speed: at 5.23MB/s
                 String speed = null;
                 Matcher speedMatcher = SPEED_PATTERN.matcher(line);
                 if (speedMatcher.find()) {
                     speed = speedMatcher.group(1);
                 }
                 
-                // Парсим ETA: ETA 00:45
+                // Parse ETA: ETA 00:45
                 Integer eta = null;
                 Matcher etaMatcher = ETA_PATTERN.matcher(line);
                 if (etaMatcher.find()) {
@@ -502,10 +503,8 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
                 progressData.put("eta", eta);
                 
                 progressCallback.accept(taskId, progressData);
-                log.debug("📊 Progress updated | TaskID: {} | Progress: {}% | Speed: {} | ETA: {}s", 
-                        taskId, progress, speed, eta);
             }
         } catch (Exception e) {
-            log.debug("⚠️ Failed to parse progress from line: {}", line, e);
+            log.warn("Failed to parse progress from line | TaskID: {} | Error: {}", taskId, e.getMessage());
         }
     }}

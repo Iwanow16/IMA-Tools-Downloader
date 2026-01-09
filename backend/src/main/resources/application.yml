@@ -35,17 +35,20 @@ downloader:
   enable-subtitles: false
   enable-thumbnail: true
 
-# YouTube specific configuration
+# Service configuration
+services:
+  youtube:
+    enabled: false
+    description: "YouTube video downloader"
+  bilibili:
+    enabled: true
+    description: "Bilibili video downloader"
+
+# YouTube configuration
 youtube:
-  # Optional: Path to cookies file for authentication
-  # cookies-file: /app/config/cookies.txt
   cookies-file: /app/resources/site_cookies.txt
-  # JS runtime for yt-dlp (node, deno, or other)
-  # Use node for modern YouTube decryption
   js-runtime: node
-  # Enable remote EJS components for signature decryption
   use-remote-components: true
-  # Merge separate audio with video (false = use formats with embedded audio only)
   merge-audio: false
 
 logging:
@@ -58,13 +61,6 @@ logging:
     max-history: 30
     total-size-cap: 1GB
     retention-days: 30
-
-# Пояснения:
-# file.name — путь к файлу лога
-# max-size — максимальный размер одного файла лога
-# max-history — сколько файлов хранить (ротация)
-# total-size-cap — общий лимит на все логи
-# retention-days — сколько дней хранить логи
 
 management:
   endpoints:

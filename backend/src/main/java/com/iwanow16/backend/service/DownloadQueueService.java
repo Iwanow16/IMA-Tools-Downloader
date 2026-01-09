@@ -1,6 +1,7 @@
 package com.iwanow16.backend.service;
 
 import com.iwanow16.backend.config.DownloaderProperties;
+import com.iwanow16.backend.extractor.VideoExtractorService;
 import com.iwanow16.backend.model.dto.TaskStatusDto;
 import com.iwanow16.backend.service.strategy.DownloadStrategyFactory;
 import com.iwanow16.backend.service.strategy.DownloadStrategy;
@@ -29,6 +30,9 @@ public class DownloadQueueService {
     @Autowired
     private DownloadStrategyFactory strategyFactory;
 
+    @Autowired
+    private VideoExtractorService extractorService;
+
     private ExecutorService executor;
     private Semaphore globalSemaphore;
     private final ConcurrentMap<String, Semaphore> ipSemaphores = new ConcurrentHashMap<>();
@@ -49,7 +53,7 @@ public class DownloadQueueService {
                                                    boolean timeRangeEnabled, String startTime, String endTime,
                                                    boolean frameExtractionEnabled, String frameTime) {
         String id = UUID.randomUUID().toString();
-        log.info("📥 New download submitted | TaskID: {} | Format: {} | Quality: {} | IP: {} | TimeRange: {} | Frame: {}", 
+        log.info("New download submitted | TaskID: {} | Format: {} | Quality: {} | IP: {} | TimeRange: {} | Frame: {}", 
                 id, formatId, quality, clientIp, timeRangeEnabled, frameExtractionEnabled);
         
         TaskStatusDto t = new TaskStatusDto();
@@ -65,7 +69,7 @@ public class DownloadQueueService {
 
         executor.submit(() -> runDownloadTask(id, url, clientIp, formatId, quality, 
                 timeRangeEnabled, startTime, endTime, frameExtractionEnabled, frameTime));
-        log.debug("⏳ Task queued for processing | TaskID: {}", id);
+        log.debug("Task queued for processing | TaskID: {}", id);
         return t;
     }
 
@@ -81,17 +85,28 @@ public class DownloadQueueService {
         long taskStartTime = System.currentTimeMillis();
         
         try {
-            log.debug("⏳ Acquiring semaphores for TaskID: {} | IP: {}", taskId, clientIp);
+            log.debug("Acquiring semaphores for TaskID: {} | IP: {}", taskId, clientIp);
             globalSemaphore.acquire();
             ipSem.acquire();
             t.setStatus("downloading");
-            log.info("⬇️ Starting download | TaskID: {} | URL: {} | Format: {}", taskId, url, formatId);
+            log.info("Starting download | TaskID: {} | URL: {} | Format: {}", taskId, url, formatId);
 
-            // Получить подходящую стратегию для URL
+            // Get appropriate strategy for URL
             DownloadStrategy strategy = strategyFactory.getStrategy(url);
-            log.debug("🎬 Using strategy: {} | TaskID: {}", strategy.getServiceName(), taskId);
+            log.debug("Using strategy: {} | TaskID: {}", strategy.getServiceName(), taskId);
 
-            // Установить callback для обновления прогресса
+            // Get video information to populate title and other data
+            try {
+                var videoInfo = extractorService.extractInfo(url);
+                if (videoInfo != null && videoInfo.getTitle() != null) {
+                    t.setTitle(videoInfo.getTitle());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to extract video info | TaskID: {} | Error: {}", taskId, e.getMessage());
+                // Continue download even if failed to get info
+            }
+
+            // Set callback for progress updates
             if (strategy instanceof com.iwanow16.backend.service.strategy.YouTubeDownloadStrategy) {
                 ((com.iwanow16.backend.service.strategy.YouTubeDownloadStrategy) strategy)
                     .setProgressCallback((id, progressData) -> {
@@ -110,7 +125,7 @@ public class DownloadQueueService {
                     });
             }
 
-            // Скачать файл в зависимости от опций
+            // Download file based on options
             Path downloadDir = storage.getStorageDir();
             long downloadStartTime = System.currentTimeMillis();
             Path downloadedFile;
@@ -134,16 +149,25 @@ public class DownloadQueueService {
             // Сохранить информацию о файле
             String filename = downloadedFile.getFileName().toString();
             t.setFilename(filename);
+            
+            // Получить размер файла
+            try {
+                long fileSize = java.nio.file.Files.size(downloadedFile);
+                t.setFileSize(fileSize);
+            } catch (Exception e) {
+                log.warn("Failed to get file size | TaskID: {}", taskId);
+            }
+            
             t.setStatus("completed");
             t.setProgress(100);
             t.setCompletedAt(OffsetDateTime.now());
             long totalDuration = System.currentTimeMillis() - taskStartTime;
-            log.info("✅ Download completed | TaskID: {} | Filename: {} | Download: {}ms | Total: {}ms", 
+            log.info("Download completed | TaskID: {} | Filename: {} | Download: {}ms | Total: {}ms", 
                     taskId, filename, downloadDuration, totalDuration);
 
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - taskStartTime;
-            log.error("❌ Download failed | TaskID: {} | Duration: {}ms | Error: {}", taskId, duration, e.getMessage(), e);
+            log.error("Download failed | TaskID: {} | Duration: {}ms | Error: {}", taskId, duration, e.getMessage(), e);
             t.setStatus("failed");
             t.setProgress(0);
             t.setFailedAt(OffsetDateTime.now());
@@ -158,7 +182,8 @@ public class DownloadQueueService {
     public void updateTaskProgress(String taskId, int progress, String downloadSpeed, Integer estimatedTime) {
         TaskStatusDto t = tasks.get(taskId);
         if (t != null) {
-            t.setProgress(Math.min(99, Math.max(0, progress))); // Клампировать 0-99, 100 только при завершении
+            int clampedProgress = Math.min(99, Math.max(0, progress));
+            t.setProgress(clampedProgress);
             if (downloadSpeed != null) {
                 t.setDownloadSpeed(downloadSpeed);
             }
@@ -171,13 +196,13 @@ public class DownloadQueueService {
     public TaskStatusDto getTask(String id, String clientIp) {
         TaskStatusDto t = tasks.get(id);
         if (t != null && !t.getClientIp().equals(clientIp)) {
-            log.warn("🚫 Access denied | TaskID: {} | RequestIP: {} | TaskIP: {}", id, clientIp, t.getClientIp());
+            log.warn("Access denied | TaskID: {} | RequestIP: {} | TaskIP: {}", id, clientIp, t.getClientIp());
             return null; // Access denied: task belongs to different client
         }
         if (t != null) {
-            log.debug("📋 Task status queried | TaskID: {} | Status: {} | Progress: {}%", id, t.getStatus(), t.getProgress());
+            log.debug("Task status queried | TaskID: {} | Status: {} | Progress: {}%", id, t.getStatus(), t.getProgress());
         } else {
-            log.debug("❓ Task not found | TaskID: {} | IP: {}", id, clientIp);
+            log.debug("Task not found | TaskID: {} | IP: {}", id, clientIp);
         }
         return t;
     }
@@ -200,7 +225,7 @@ public class DownloadQueueService {
             }
         }
         
-        log.debug("📋 Queue status retrieved | IP: {} | Total: {} | Pending: {} | Downloading: {} | Completed: {}", 
+        log.debug("Queue status retrieved | IP: {} | Total: {} | Pending: {} | Downloading: {} | Completed: {}", 
                 clientIp, clientTasks.size(), pending, downloading, completed);
         return clientTasks;
     }
@@ -212,9 +237,9 @@ public class DownloadQueueService {
             t.setStatus("cancelled");
             log.info("⛔ Task cancelled | TaskID: {} | PreviousStatus: {} | IP: {}", taskId, previousStatus, clientIp);
         } else if (t == null) {
-            log.warn("⛔ Cancel failed - task not found | TaskID: {} | IP: {}", taskId, clientIp);
+            log.warn("Cancel failed - task not found | TaskID: {} | IP: {}", taskId, clientIp);
         } else {
-            log.warn("🚫 Cancel denied - access denied | TaskID: {} | RequestIP: {} | TaskIP: {}", taskId, clientIp, t.getClientIp());
+            log.warn("Cancel denied - access denied | TaskID: {} | RequestIP: {} | TaskIP: {}", taskId, clientIp, t.getClientIp());
         }
     }
 }

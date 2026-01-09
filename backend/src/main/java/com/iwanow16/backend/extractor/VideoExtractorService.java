@@ -25,16 +25,12 @@ public class VideoExtractorService {
     private DownloadStrategyFactory strategyFactory;
 
     public VideoExtractorService() {
-        log.info("🔧 VideoExtractorService constructor called");
     }
 
     @PostConstruct
     public void init() {
-        log.info("🎯 VideoExtractorService initialized with {} extractors", 
+        log.info("VideoExtractorService initialized with {} extractors", 
                 extractors != null ? extractors.size() : 0);
-        if (extractors != null) {
-            extractors.forEach(e -> log.info("  - {}", e.getClass().getSimpleName()));
-        }
     }
 
     /**

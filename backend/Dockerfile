@@ -9,27 +9,19 @@ RUN chmod +x gradlew && ./gradlew clean bootJar -x test --no-daemon
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar ./app.jar
-
-# Copy resources including cookies file
 COPY backend/src/main/resources ./resources
 
-# Install ffmpeg, yt-dlp runtime dependencies, and browsers for cookie extraction
+# Install minimal dependencies
 RUN apt-get update && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
     ffmpeg \
-    python3-pip \
-    ca-certificates \
     curl \
-    firefox \
-    chromium-browser \
-    nodejs \
-    --no-install-recommends && \
-    pip3 install --no-cache-dir yt-dlp && \
+    ca-certificates \
+    python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-# Create .wgetrc for cookie support
-RUN echo "hsts = off" > ~/.wgetrc
+# Install yt-dlp
+RUN pip3 install --no-cache-dir yt-dlp
 
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app/app.jar"]

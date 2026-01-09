@@ -33,9 +33,9 @@ public class FileStorageService {
         Path p = Paths.get(outputDir);
         if (!Files.exists(p)) {
             Files.createDirectories(p);
-            log.info("📂 Created storage directory | Path: {}", p.toAbsolutePath());
+            log.info("Created storage directory | Path: {}", p.toAbsolutePath());
         } else {
-            log.debug("📂 Storage directory exists | Path: {}", p.toAbsolutePath());
+            log.debug("Storage directory exists | Path: {}", p.toAbsolutePath());
         }
     }
 
@@ -47,7 +47,7 @@ public class FileStorageService {
 
     public Path getStorageDir() {
         Path result = Paths.get(outputDir).toAbsolutePath().normalize();
-        log.debug("📦 Storage directory: {}", result);
+        log.debug("Storage directory: {}", result);
         return result;
     }
 }

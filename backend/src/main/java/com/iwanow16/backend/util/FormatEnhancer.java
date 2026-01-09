@@ -27,9 +27,26 @@ public class FormatEnhancer {
      * @return обогащённый список с дополнительными синтетическими форматами
      */
     public static List<FormatDto> enhanceFormats(List<FormatDto> formats, String serviceName) {
+        return enhanceFormats(formats, serviceName, true);
+    }
+
+    /**
+     * Обогатить список форматов синтетическими video+audio вариантами.
+     * 
+     * @param formats исходный список форматов от yt-dlp
+     * @param serviceName название платформы (youtube, bilibili, etc)
+     * @param mergeAudio нужно ли создавать синтетические video+audio форматы
+     * @return обогащённый список с дополнительными синтетическими форматами
+     */
+    public static List<FormatDto> enhanceFormats(List<FormatDto> formats, String serviceName, boolean mergeAudio) {
         if (formats == null || formats.isEmpty()) {
+            log.debug("🔚 enhanceFormats called with null/empty formats");
             return formats;
         }
+
+        log.debug("🎬 enhanceFormats START | Service: {} | Input formats: {}", serviceName, formats.size());
+        formats.forEach(f -> log.debug("  - Input format: {} | vcodec: {} | acodec: {} | quality: {}", 
+            f.getFormatId(), f.getVcodec(), f.getAcodec(), f.getQuality()));
 
         List<FormatDto> enhanced = new ArrayList<>(formats);
         
@@ -50,15 +67,16 @@ public class FormatEnhancer {
                            !"none".equals(f.getVcodec()) && !"none".equals(f.getAcodec()))
                 .collect(Collectors.toList());
 
-        log.debug("📊 Format analysis | Service: {} | Video-only: {} | Audio-only: {} | Combined: {}", 
-                serviceName, videoFormats.size(), audioFormats.size(), combinedFormats.size());
+        log.debug("📊 Format analysis | Service: {} | Video-only: {} | Audio-only: {} | Combined: {} | Merge: {}", 
+                serviceName, videoFormats.size(), audioFormats.size(), combinedFormats.size(), mergeAudio);
 
-        // Если есть разделённые форматы (видео и аудио отдельно), создаём комбинированные
-        if (!videoFormats.isEmpty() && !audioFormats.isEmpty()) {
+        // Если есть разделённые форматы (видео и аудио отдельно) и нужно их объединять, создаём комбинированные
+        if (mergeAudio && !videoFormats.isEmpty() && !audioFormats.isEmpty()) {
             log.info("🔀 Creating synthetic video+audio format combinations | Service: {}", serviceName);
             createCombinedFormats(enhanced, videoFormats, audioFormats);
         }
 
+        log.debug("🔚 FormatEnhancer returning {} formats", enhanced.size());
         return enhanced;
     }
 

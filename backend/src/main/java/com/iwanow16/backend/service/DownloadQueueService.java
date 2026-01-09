@@ -91,6 +91,25 @@ public class DownloadQueueService {
             DownloadStrategy strategy = strategyFactory.getStrategy(url);
             log.debug("🎬 Using strategy: {} | TaskID: {}", strategy.getServiceName(), taskId);
 
+            // Установить callback для обновления прогресса
+            if (strategy instanceof com.iwanow16.backend.service.strategy.YouTubeDownloadStrategy) {
+                ((com.iwanow16.backend.service.strategy.YouTubeDownloadStrategy) strategy)
+                    .setProgressCallback((id, progressData) -> {
+                        int progress = (Integer) progressData.get("progress");
+                        String speed = (String) progressData.get("speed");
+                        Integer eta = (Integer) progressData.get("eta");
+                        updateTaskProgress(id, progress, speed, eta);
+                    });
+            } else if (strategy instanceof com.iwanow16.backend.service.strategy.BilibiliDownloadStrategy) {
+                ((com.iwanow16.backend.service.strategy.BilibiliDownloadStrategy) strategy)
+                    .setProgressCallback((id, progressData) -> {
+                        int progress = (Integer) progressData.get("progress");
+                        String speed = (String) progressData.get("speed");
+                        Integer eta = (Integer) progressData.get("eta");
+                        updateTaskProgress(id, progress, speed, eta);
+                    });
+            }
+
             // Скачать файл в зависимости от опций
             Path downloadDir = storage.getStorageDir();
             long downloadStartTime = System.currentTimeMillis();
@@ -136,6 +155,19 @@ public class DownloadQueueService {
         }
     }
 
+    public void updateTaskProgress(String taskId, int progress, String downloadSpeed, Integer estimatedTime) {
+        TaskStatusDto t = tasks.get(taskId);
+        if (t != null) {
+            t.setProgress(Math.min(99, Math.max(0, progress))); // Клампировать 0-99, 100 только при завершении
+            if (downloadSpeed != null) {
+                t.setDownloadSpeed(downloadSpeed);
+            }
+            if (estimatedTime != null) {
+                t.setEstimatedTime(estimatedTime);
+            }
+        }
+    }
+
     public TaskStatusDto getTask(String id, String clientIp) {
         TaskStatusDto t = tasks.get(id);
         if (t != null && !t.getClientIp().equals(clientIp)) {
@@ -154,9 +186,20 @@ public class DownloadQueueService {
         List<TaskStatusDto> clientTasks = tasks.values().stream()
                 .filter(task -> task.getClientIp().equals(clientIp))
                 .toList();
-        int pending = (int) clientTasks.stream().filter(t -> "pending".equals(t.getStatus())).count();
-        int downloading = (int) clientTasks.stream().filter(t -> "downloading".equals(t.getStatus())).count();
-        int completed = (int) clientTasks.stream().filter(t -> "completed".equals(t.getStatus())).count();
+        
+        // Count statuses in single pass instead of multiple filters
+        int pending = 0;
+        int downloading = 0;
+        int completed = 0;
+        
+        for (TaskStatusDto task : clientTasks) {
+            switch (task.getStatus()) {
+                case "pending" -> pending++;
+                case "downloading" -> downloading++;
+                case "completed" -> completed++;
+            }
+        }
+        
         log.debug("📋 Queue status retrieved | IP: {} | Total: {} | Pending: {} | Downloading: {} | Completed: {}", 
                 clientIp, clientTasks.size(), pending, downloading, completed);
         return clientTasks;

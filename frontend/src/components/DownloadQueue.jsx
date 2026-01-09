@@ -28,12 +28,16 @@ const DownloadQueue = () => {
   const pollingIntervalRef = useRef(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
 
-  // Set up polling for task updates
+  // Set up polling for task updates (only if there are active tasks)
   useEffect(() => {
-    if (autoRefresh) {
+    const hasActiveTasks = tasks.some(t => 
+      t.status === 'pending' || t.status === 'downloading'
+    )
+    
+    if (autoRefresh && hasActiveTasks) {
       const interval = setInterval(() => {
         refreshTasks()
-      }, 3000)
+      }, 5000) // Increased from 3s to 5s
       
       pollingIntervalRef.current = interval
       return () => clearInterval(interval)
@@ -43,7 +47,7 @@ const DownloadQueue = () => {
         pollingIntervalRef.current = null
       }
     }
-  }, [autoRefresh, refreshTasks])
+  }, [autoRefresh, refreshTasks, tasks])
 
   // Format time
   const formatTime = (dateString) => {
@@ -53,7 +57,7 @@ const DownloadQueue = () => {
 
   // Format duration
   const formatDuration = (seconds) => {
-    if (!seconds) return '--:--'
+    if (!seconds) return t('common.noTime')
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = Math.floor(seconds % 60)
@@ -130,7 +134,7 @@ const DownloadQueue = () => {
           <button
             onClick={() => refreshTasks()}
             className="refresh-button"
-            title="Refresh"
+            title={t('common.refresh')}
           >
             <FaRedo />
           </button>
@@ -142,7 +146,7 @@ const DownloadQueue = () => {
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
             />
-            <label htmlFor="autoRefresh">Auto-refresh</label>
+            <label htmlFor="autoRefresh">{t('common.autoRefresh')}</label>
           </div>
         </div>
       </div>
@@ -193,8 +197,8 @@ const DownloadQueue = () => {
                     </div>
                     
                     <div className="task-info">
-                      <div className="task-title" title={task.title || 'Unknown video'}>
-                        <strong>📹 {task.title || 'Unknown video'}</strong>
+                      <div className="task-title" title={task.title || t('common.unknownVideo')}>
+                        <strong>📹 {task.title || t('common.unknownVideo')}</strong>
                       </div>
                       
                       <div className="task-url" title={task.url}>
@@ -280,8 +284,8 @@ const DownloadQueue = () => {
                     </div>
                     
                     <div className="task-info">
-                      <div className="task-filename" title={task.title || task.filename || 'Unknown'}>
-                        📁 {task.title || task.filename || 'Unknown file'}
+                      <div className="task-filename" title={task.title || task.filename || t('common.unknownFile')}>
+                        📁 {task.title || task.filename || t('common.unknownFile')}
                       </div>
                       
                       <div className="task-actions-completed">
@@ -307,7 +311,7 @@ const DownloadQueue = () => {
                     
                     <div className="task-footer">
                       <span className="task-time">
-                        Completed: {task.completedAt ? formatTime(task.completedAt) : 'Unknown'}
+                        Completed: {task.completedAt ? formatTime(task.completedAt) : t('common.unknownPlatform')}
                       </span>
                       
                       {task.fileSize && (
@@ -373,7 +377,7 @@ const DownloadQueue = () => {
                     
                     <div className="task-footer">
                       <span className="task-time">
-                        Failed: {task.failedAt ? formatTime(task.failedAt) : 'Unknown'}
+                        Failed: {task.failedAt ? formatTime(task.failedAt) : t('common.unknownPlatform')}
                       </span>
                     </div>
                   </div>

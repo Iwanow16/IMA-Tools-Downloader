@@ -14,13 +14,16 @@ COPY --from=builder /app/build/libs/*.jar ./app.jar
 COPY backend/src/main/resources ./resources
 
 # Install ffmpeg, yt-dlp runtime dependencies, and browsers for cookie extraction
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y \
     ffmpeg \
     python3-pip \
     ca-certificates \
     curl \
     firefox \
     chromium-browser \
+    nodejs \
     --no-install-recommends && \
     pip3 install --no-cache-dir yt-dlp && \
     rm -rf /var/lib/apt/lists/*

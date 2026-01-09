@@ -63,7 +63,8 @@
     "size": "Видео превышает максимальный допустимый размер",
     "duration": "Видео превышает максимальную допустимую длительность",
     "invalid": "Некорректная ссылка или видео недоступно",
-    "unsupported": "Эта платформа не поддерживается."
+    "unsupported": "Эта платформа не поддерживается.",
+    "urlTooLong": "URL слишком длинный"
   },
   "notifications": {
     "addedToQueue": "Добавлено в очередь загрузки",
@@ -102,5 +103,33 @@
     "enableFrameExtraction": "Извлечь кадр из видео",
     "frameTime": "Время кадра (сек)",
     "hint": "Введите время в секундах (например, 0 для начала, 30 для 30 секунд)"
+  },
+  "footer": {
+    "title": "IMA Tools Downloader",
+    "disclaimer": "Исключительно в образовательных целях.",
+    "github": "GitHub"
+  },
+  "common": {
+    "unknownSize": "Неизвестный размер",
+    "bytes": "Байт",
+    "kb": "КБ",
+    "mb": "МБ",
+    "gb": "ГБ",
+    "unknownQuality": "Неизвестное качество",
+    "unknownVideo": "Неизвестное видео",
+    "unknownFile": "Неизвестный файл",
+    "unknownPlatform": "Неизвестно",
+    "noTime": "--:--",
+    "videoAudio": "Видео + Аудио",
+    "audioOnly": "Только аудио",
+    "videoOnly": "Только видео",
+    "timeCompleted": "Завершено",
+    "timeFailed": "Ошибка",
+    "refresh": "Обновить",
+    "autoRefresh": "Автообновление",
+    "externalLink": "Внешняя ссылка",
+    "exampleUrl": "example.com/video-id",
+    "javascriptRequired": "JavaScript обязателен",
+    "javascriptMessage": "Это приложение требует JavaScript для работы. Пожалуйста, включите JavaScript в настройках браузера."
   }
 }

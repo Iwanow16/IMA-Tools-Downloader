@@ -59,7 +59,7 @@ const VideoInfo = () => {
   }
 
   const formatDuration = (seconds) => {
-    if (!seconds) return '--:--'
+    if (!seconds) return t('common.noTime')
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = Math.floor(seconds % 60)
@@ -71,10 +71,10 @@ const VideoInfo = () => {
   }
 
   const formatFileSize = (bytes) => {
-    if (!bytes) return 'Unknown size'
-    if (bytes === 0) return '0 Bytes'
+    if (!bytes) return t('common.unknownSize')
+    if (bytes === 0) return `0 ${t('common.bytes')}`
     const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const sizes = [t('common.bytes'), t('common.kb'), t('common.mb'), t('common.gb')]
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
@@ -121,19 +121,19 @@ const VideoInfo = () => {
 
   const getFormatLabel = (format) => {
     // Определяем тип формата
-    let type = 'Video + Audio'
+    let type = t('common.videoAudio')
     if (format.vcodec === 'none') {
-      type = 'Audio Only'
+      type = t('common.audioOnly')
     } else if (format.acodec === 'none') {
-      type = 'Video Only'
+      type = t('common.videoOnly')
     }
     
     // Получаем качество
-    let quality = format.quality || format.resolution || format.format_note || 'Unknown Quality'
+    let quality = format.quality || format.resolution || format.format_note || t('common.unknownQuality')
     
     return {
       type,
-      quality: quality.toString().trim() || 'Unknown Quality'
+      quality: quality.toString().trim() || t('common.unknownQuality')
     }
   }
 
@@ -157,7 +157,7 @@ const VideoInfo = () => {
         <div className="metadata-item">
           <span className="metadata-label">{t('videoInfo.platform')}:</span>
           <span className="metadata-value">
-            {detectedService ? detectedService.name : 'Unknown'}
+            {detectedService ? detectedService.name : t('common.unknownPlatform')}
           </span>
         </div>
         

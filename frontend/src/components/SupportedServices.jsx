@@ -178,7 +178,7 @@ const SupportedServices = () => {
 
               <div className="service-footer">
                 <span className="service-example">
-                  example.com/video-id
+                  {t('common.exampleUrl')}
                 </span>
                 <FaExternalLinkAlt className="external-icon" />
               </div>

@@ -32,7 +32,7 @@ const UrlInput = () => {
     }
     
     if (inputUrl.length > config.validation.maxUrlLength) {
-      return 'URL is too long'
+      return t('errors.urlTooLong')
     }
     
     const service = detectService(inputUrl)

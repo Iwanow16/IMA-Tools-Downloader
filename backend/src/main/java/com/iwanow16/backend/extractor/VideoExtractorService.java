@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 /**
@@ -22,6 +23,19 @@ public class VideoExtractorService {
 
     @Autowired
     private DownloadStrategyFactory strategyFactory;
+
+    public VideoExtractorService() {
+        log.info("🔧 VideoExtractorService constructor called");
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info("🎯 VideoExtractorService initialized with {} extractors", 
+                extractors != null ? extractors.size() : 0);
+        if (extractors != null) {
+            extractors.forEach(e -> log.info("  - {}", e.getClass().getSimpleName()));
+        }
+    }
 
     /**
      * Извлечь информацию о видео с использованием подходящего экстрактора.

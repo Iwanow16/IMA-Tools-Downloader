@@ -10,9 +10,25 @@ const api = axios.create({
   }
 })
 
-// Request interceptor
+// Simple request cache for GET requests
+const requestCache = new Map()
+const CACHE_DURATION = 2000 // 2 seconds
+
+// Request interceptor with caching for GET requests
 api.interceptors.request.use(
   (config) => {
+    // Check cache for GET requests
+    if (config.method === 'get') {
+      const cacheKey = config.url + JSON.stringify(config.params || {})
+      const cached = requestCache.get(cacheKey)
+      
+      if (cached && Date.now() - cached.time < CACHE_DURATION) {
+        // Return cached data without making request
+        console.log(`API Cache Hit: ${config.url}`)
+        return Promise.resolve({ data: cached.data, config, status: 200, statusText: 'OK (cached)' })
+      }
+    }
+    
     console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`)
     return config
   },
@@ -22,9 +38,18 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor
+// Response interceptor with caching
 api.interceptors.response.use(
   (response) => {
+    // Cache GET requests
+    if (response.config.method === 'get') {
+      const cacheKey = response.config.url + JSON.stringify(response.config.params || {})
+      requestCache.set(cacheKey, {
+        data: response.data,
+        time: Date.now()
+      })
+    }
+    
     console.log(`API Response: ${response.status} ${response.config.url}`)
     return response
   },
@@ -121,14 +146,23 @@ export const downloadAPI = {
   },
 
   // Trigger file download (stays on page)
-  triggerDownload: (filename) => {
-    const url = `${config.api.baseUrl}/api/downloads/${filename}`
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', filename)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  triggerDownload: async (filename) => {
+    try {
+      const response = await api.get(`/api/downloads/${filename}`, {
+        responseType: 'blob'
+      })
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to download file')
+    }
   }
 }
 

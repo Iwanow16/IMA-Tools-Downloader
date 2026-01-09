@@ -63,7 +63,8 @@
     "size": "Video exceeds maximum allowed size",
     "duration": "Video exceeds maximum allowed duration",
     "invalid": "Invalid video URL or video is unavailable",
-    "unsupported": "This service is not supported."
+    "unsupported": "This service is not supported.",
+    "urlTooLong": "URL is too long"
   },
   "notifications": {
     "addedToQueue": "Added to download queue",
@@ -102,5 +103,33 @@
     "enableFrameExtraction": "Extract a frame from video",
     "frameTime": "Frame time (seconds)",
     "hint": "Enter time in seconds (e.g., 0 for start, 30 for 30 seconds)"
+  },
+  "footer": {
+    "title": "IMA Tools Downloader",
+    "disclaimer": "For educational purposes only.",
+    "github": "GitHub"
+  },
+  "common": {
+    "unknownSize": "Unknown size",
+    "bytes": "Bytes",
+    "kb": "KB",
+    "mb": "MB",
+    "gb": "GB",
+    "unknownQuality": "Unknown Quality",
+    "unknownVideo": "Unknown video",
+    "unknownFile": "Unknown file",
+    "unknownPlatform": "Unknown",
+    "noTime": "--:--",
+    "videoAudio": "Video + Audio",
+    "audioOnly": "Audio Only",
+    "videoOnly": "Video Only",
+    "timeCompleted": "Completed",
+    "timeFailed": "Failed",
+    "refresh": "Refresh",
+    "autoRefresh": "Auto-refresh",
+    "externalLink": "External link",
+    "exampleUrl": "example.com/video-id",
+    "javascriptRequired": "JavaScript Required",
+    "javascriptMessage": "This application requires JavaScript to function. Please enable JavaScript in your browser settings."
   }
 }

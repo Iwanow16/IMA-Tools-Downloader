@@ -28,15 +28,24 @@ public class BilibiliVideoExtractor implements VideoExtractor {
     public VideoInfoDto extractInfo(String url) throws Exception {
         log.info("🎬 Bilibili: Extracting video info from: {}", url);
         
-        String cookiesPath = "/app/resources/bilibili_cookies.txt";
+        String cookiesPath = "/app/resources/site_cookies.txt";
         
         List<String> cmd = new ArrayList<>();
         cmd.add("yt-dlp");
         cmd.add("--dump-json");
         cmd.add("--user-agent");
         cmd.add("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        cmd.add("--cookies");
-        cmd.add(cookiesPath);
+        
+        // Добавить cookies только если файл существует и не пустой
+        java.io.File cookieFile = new java.io.File(cookiesPath);
+        if (cookieFile.exists() && cookieFile.length() > 100) {
+            cmd.add("--cookies");
+            cmd.add(cookiesPath);
+            log.debug("🍪 Using cookies file | URL: {}", url);
+        } else {
+            log.debug("⚠️ Cookies file not found or empty, proceeding without cookies | URL: {}", url);
+        }
+        
         cmd.add("--no-check-certificate");
         cmd.add("--socket-timeout");
         cmd.add("30");

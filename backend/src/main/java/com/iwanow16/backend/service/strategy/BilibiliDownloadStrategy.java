@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Стратегия скачивания видео с Bilibili.
@@ -17,9 +20,21 @@ import java.util.Optional;
 @Component
 public class BilibiliDownloadStrategy implements DownloadStrategy {
     private static final Logger log = LoggerFactory.getLogger(BilibiliDownloadStrategy.class);
+    
+    // Паттерны для парсинга прогресса из yt-dlp
+    private static final Pattern PROGRESS_PATTERN = Pattern.compile("\\[download\\] (\\d+(?:\\.\\d+)?)%");
+    private static final Pattern SPEED_PATTERN = Pattern.compile("at\\s+(\\d+(?:\\.\\d+)?[KMGT]?B/s)");
+    private static final Pattern ETA_PATTERN = Pattern.compile("ETA\\s+(\\d+):(\\d+)");
 
     @Autowired
     private FrameExtractorUtil frameExtractorUtil;
+    
+    // Callback для обновления прогресса
+    private BiConsumer<String, java.util.Map<String, Object>> progressCallback;
+
+    public void setProgressCallback(BiConsumer<String, java.util.Map<String, Object>> callback) {
+        this.progressCallback = callback;
+    }
 
     @Override
     public boolean supports(String url) {
@@ -36,15 +51,24 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
         log.info("🎬 Bilibili download started | TaskID: {} | URL: {}", taskId, url);
         long startTime = System.currentTimeMillis();
         
-        String cookiesPath = "/app/resources/bilibili_cookies.txt";
+        String cookiesPath = "/app/resources/site_cookies.txt";
         
         // Построить команду yt-dlp для Bilibili
         java.util.List<String> cmd = new java.util.ArrayList<>();
         cmd.add("yt-dlp");
         cmd.add("--user-agent");
         cmd.add("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        cmd.add("--cookies");
-        cmd.add(cookiesPath);
+        
+        // Добавить cookies только если файл существует и не пустой
+        java.io.File cookieFile = new java.io.File(cookiesPath);
+        if (cookieFile.exists() && cookieFile.length() > 100) {
+            cmd.add("--cookies");
+            cmd.add(cookiesPath);
+            log.debug("🍪 Using cookies file | TaskID: {}", taskId);
+        } else {
+            log.debug("⚠️ Cookies file not found or empty, proceeding without cookies | TaskID: {}", taskId);
+        }
+        
         cmd.add("--no-check-certificate");
         cmd.add("--socket-timeout");
         cmd.add("30");
@@ -111,6 +135,7 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     error.append(line).append("\n");
+                    parseAndUpdateProgress(taskId, line);
                     log.debug("⚠️ yt-dlp error | TaskID: {} | {}", taskId, line);
                 }
             } catch (Exception e) {
@@ -264,29 +289,48 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
     public Path extractFrame(String url, Path outputDir, String taskId, String frameTime) throws Exception {
         log.info("📷 Bilibili frame extraction | TaskID: {} | Frame time: {}s", taskId, frameTime);
         
-        String cookiesPath = "/app/resources/bilibili_cookies.txt";
+        String cookiesPath = "/app/resources/site_cookies.txt";
         
         // Сначала загрузим видео в формате, с которым может работать ffmpeg
         String tempVideoFile = "temp_" + System.currentTimeMillis() + ".mp4";
         Path tempVideoPath = outputDir.resolve(tempVideoFile);
 
-        log.debug("⏳ Downloading video for frame extraction | TaskID: {} | Temp file: {}", 
-                taskId, tempVideoFile);
-
-        // Используем yt-dlp для загрузки лучшего видеоформата
-        java.util.List<String> downloadCmd = new java.util.ArrayList<>();
-        downloadCmd.add("yt-dlp");
-        downloadCmd.add("--user-agent");
-        downloadCmd.add("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-        downloadCmd.add("--cookies");
-        downloadCmd.add(cookiesPath);
-        // Не указываем формат - пусть yt-dlp выберет лучший доступный автоматически
-        downloadCmd.add("-o");
-        downloadCmd.add(tempVideoPath.toString());
-        downloadCmd.add(url);
+        // Построить команду yt-dlp
+        java.util.List<String> cmd = new java.util.ArrayList<>();
+        cmd.add("yt-dlp");
+        cmd.add("--user-agent");
+        cmd.add("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        
+        // Добавить cookies только если файл существует и не пустой
+        java.io.File cookieFile = new java.io.File(cookiesPath);
+        if (cookieFile.exists() && cookieFile.length() > 100) {
+            cmd.add("--cookies");
+            cmd.add(cookiesPath);
+            log.debug("🍪 Using cookies file | TaskID: {}", taskId);
+        } else {
+            log.debug("⚠️ Cookies file not found or empty, proceeding without cookies | TaskID: {}", taskId);
+        }
+        
+        cmd.add("--no-check-certificate");
+        cmd.add("--socket-timeout");
+        cmd.add("30");
+        cmd.add("--retries");
+        cmd.add("3");
+        cmd.add("--fragment-retries");
+        cmd.add("3");
+        cmd.add("--extractor-args");
+        cmd.add("bilibili:is_story=False");
+        cmd.add("--extractor-args");
+        cmd.add("bilibili:metadata_api=true");
+        cmd.add("-f");
+        cmd.add("best[ext=mp4]/best");
+        cmd.add("-c");
+        cmd.add("-o");
+        cmd.add(tempVideoPath.toString());
+        cmd.add(url);
 
         log.debug("⏳ Executing yt-dlp download | TaskID: {}", taskId);
-        ProcessBuilder pb = new ProcessBuilder(downloadCmd);
+        ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.redirectErrorStream(true);
         Process p = pb.start();
 
@@ -420,4 +464,48 @@ public class BilibiliDownloadStrategy implements DownloadStrategy {
         
         return null;
     }
-}
+
+    /**
+     * Парсить прогресс из вывода yt-dlp и вызвать callback
+     */
+    private void parseAndUpdateProgress(String taskId, String line) {
+        if (progressCallback == null) {
+            return;
+        }
+        
+        try {
+            // Парсим прогресс: [download] 45.3%
+            Matcher progressMatcher = PROGRESS_PATTERN.matcher(line);
+            if (progressMatcher.find()) {
+                double percent = Double.parseDouble(progressMatcher.group(1));
+                int progress = (int) percent;
+                
+                // Парсим скорость: at 5.23MB/s
+                String speed = null;
+                Matcher speedMatcher = SPEED_PATTERN.matcher(line);
+                if (speedMatcher.find()) {
+                    speed = speedMatcher.group(1);
+                }
+                
+                // Парсим ETA: ETA 00:45
+                Integer eta = null;
+                Matcher etaMatcher = ETA_PATTERN.matcher(line);
+                if (etaMatcher.find()) {
+                    int minutes = Integer.parseInt(etaMatcher.group(1));
+                    int seconds = Integer.parseInt(etaMatcher.group(2));
+                    eta = minutes * 60 + seconds;
+                }
+                
+                java.util.Map<String, Object> progressData = new java.util.HashMap<>();
+                progressData.put("progress", progress);
+                progressData.put("speed", speed);
+                progressData.put("eta", eta);
+                
+                progressCallback.accept(taskId, progressData);
+                log.debug("📊 Progress updated | TaskID: {} | Progress: {}% | Speed: {} | ETA: {}s", 
+                        taskId, progress, speed, eta);
+            }
+        } catch (Exception e) {
+            log.debug("⚠️ Failed to parse progress from line: {}", line, e);
+        }
+    }}

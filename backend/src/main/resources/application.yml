@@ -39,10 +39,14 @@ downloader:
 youtube:
   # Optional: Path to cookies file for authentication
   # cookies-file: /app/config/cookies.txt
-  cookies-file: ""
+  cookies-file: /app/resources/site_cookies.txt
   # JS runtime for yt-dlp (node, deno, or other)
-  # Use deno by default as it's often more reliable
-  js-runtime: deno
+  # Use node for modern YouTube decryption
+  js-runtime: node
+  # Enable remote EJS components for signature decryption
+  use-remote-components: true
+  # Merge separate audio with video (false = use formats with embedded audio only)
+  merge-audio: false
 
 logging:
   config: classpath:logback-spring.xml

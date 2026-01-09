@@ -12,6 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Стратегия скачивания видео с YouTube с поддержкой cookies и JS runtime.
@@ -19,6 +22,11 @@ import java.util.List;
 @Component
 public class YouTubeDownloadStrategy implements DownloadStrategy {
     private static final Logger log = LoggerFactory.getLogger(YouTubeDownloadStrategy.class);
+    
+    // Паттерны для парсинга прогресса из yt-dlp
+    private static final Pattern PROGRESS_PATTERN = Pattern.compile("\\[download\\] (\\d+(?:\\.\\d+)?)%");
+    private static final Pattern SPEED_PATTERN = Pattern.compile("at\\s+(\\d+(?:\\.\\d+)?[KMGT]?B/s)");
+    private static final Pattern ETA_PATTERN = Pattern.compile("ETA\\s+(\\d+):(\\d+)");
 
     @Value("${app.youtube.cookies-file:}")
     private String cookiesFile;
@@ -26,8 +34,18 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
     @Value("${app.youtube.js-runtime:node}")
     private String jsRuntime;
 
+    @Value("${app.youtube.use-remote-components:true}")
+    private boolean useRemoteComponents;
+
     @Autowired
     private FrameExtractorUtil frameExtractorUtil;
+    
+    // Callback для обновления прогресса
+    private BiConsumer<String, java.util.Map<String, Object>> progressCallback;
+
+    public void setProgressCallback(BiConsumer<String, java.util.Map<String, Object>> callback) {
+        this.progressCallback = callback;
+    }
 
     @Override
     public boolean supports(String url) {
@@ -46,7 +64,19 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
         
         List<String> cmd = new ArrayList<>();
         cmd.add("yt-dlp");
-
+        
+        // Не скачивать весь плейлист, даже если URL содержит параметры плейлиста
+        cmd.add("--no-playlist");
+        
+        // Добавить JS runtime для YouTube (требуется для новых версий)
+        cmd.add("--js-runtimes");
+        cmd.add("node");
+        // Добавить remote components для решения JS challenges
+        if (useRemoteComponents) {
+            cmd.add("--remote-components");
+            cmd.add("ejs:github");
+            log.debug("📡 Remote EJS components enabled | TaskID: {}", taskId);
+        }
         // Добавить cookies, если они настроены
         if (cookiesFile != null && !cookiesFile.isBlank()) {
             cmd.add("--cookies");
@@ -112,6 +142,7 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     error.append(line).append("\n");
+                    parseAndUpdateProgress(taskId, line);
                     log.debug("⚠️ yt-dlp error | TaskID: {} | {}", taskId, line);
                 }
             } catch (Exception e) {
@@ -276,6 +307,28 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
         // Используем yt-dlp для загрузки лучшего видеоформата
         List<String> downloadCmd = new ArrayList<>();
         downloadCmd.add("yt-dlp");
+        
+        // Не скачивать весь плейлист, даже если URL содержит параметры плейлиста
+        downloadCmd.add("--no-playlist");
+        
+        // Добавить JS runtime для YouTube (требуется для новых версий)
+        downloadCmd.add("--js-runtimes");
+        downloadCmd.add(jsRuntime);
+
+        // Добавить remote components для решения JS challenges
+        if (useRemoteComponents) {
+            downloadCmd.add("--remote-components");
+            downloadCmd.add("ejs:github");
+            log.debug("📡 Remote EJS components enabled | TaskID: {}", taskId);
+        }
+        
+        // Добавить cookies, если они настроены
+        if (cookiesFile != null && !cookiesFile.isBlank()) {
+            downloadCmd.add("--cookies");
+            downloadCmd.add(cookiesFile);
+            log.debug("🍪 Using cookies file | TaskID: {}", taskId);
+        }
+        
         downloadCmd.add("-f");
         downloadCmd.add("b");  // Лучший доступный формат (без предупреждения)
         downloadCmd.add("-o");
@@ -412,4 +465,48 @@ public class YouTubeDownloadStrategy implements DownloadStrategy {
 
         return null;
     }
-}
+
+    /**
+     * Парсить прогресс из вывода yt-dlp и вызвать callback
+     */
+    private void parseAndUpdateProgress(String taskId, String line) {
+        if (progressCallback == null) {
+            return;
+        }
+        
+        try {
+            // Парсим прогресс: [download] 45.3%
+            Matcher progressMatcher = PROGRESS_PATTERN.matcher(line);
+            if (progressMatcher.find()) {
+                double percent = Double.parseDouble(progressMatcher.group(1));
+                int progress = (int) percent;
+                
+                // Парсим скорость: at 5.23MB/s
+                String speed = null;
+                Matcher speedMatcher = SPEED_PATTERN.matcher(line);
+                if (speedMatcher.find()) {
+                    speed = speedMatcher.group(1);
+                }
+                
+                // Парсим ETA: ETA 00:45
+                Integer eta = null;
+                Matcher etaMatcher = ETA_PATTERN.matcher(line);
+                if (etaMatcher.find()) {
+                    int minutes = Integer.parseInt(etaMatcher.group(1));
+                    int seconds = Integer.parseInt(etaMatcher.group(2));
+                    eta = minutes * 60 + seconds;
+                }
+                
+                java.util.Map<String, Object> progressData = new java.util.HashMap<>();
+                progressData.put("progress", progress);
+                progressData.put("speed", speed);
+                progressData.put("eta", eta);
+                
+                progressCallback.accept(taskId, progressData);
+                log.debug("📊 Progress updated | TaskID: {} | Progress: {}% | Speed: {} | ETA: {}s", 
+                        taskId, progress, speed, eta);
+            }
+        } catch (Exception e) {
+            log.debug("⚠️ Failed to parse progress from line: {}", line, e);
+        }
+    }}

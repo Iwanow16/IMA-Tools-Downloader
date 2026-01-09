@@ -95,17 +95,17 @@ const App = () => {
             <div className="footer-content">
               <div className="copyright">
                 <FaGlobe className="footer-icon" />
-                © {new Date().getFullYear()} Universal Video Downloader. For educational purposes only.
+                © {new Date().getFullYear()} {t('footer.title')}. {t('footer.disclaimer')}
               </div>
               
               <div className="footer-links">
                 <a 
-                  href="https://github.com" 
+                  href="https://github.com/Iwanow16/IMA-Tools-Downloader" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="footer-link"
                 >
-                  <FaGithub /> GitHub
+                  <FaGithub /> {t('footer.github')}
                 </a>
               </div>
             </div>

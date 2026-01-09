@@ -51,7 +51,10 @@ public class DownloadController {
             log.info("📋 Fetching video info for URL: {}", url);
             VideoInfoDto info = extractorService.extractInfo(url);
             log.info("✅ Successfully extracted info: title={}, formats={}", info.getTitle(), info.getFormats().size());
-            return ResponseEntity.ok(ApiResponseDto.success(info));
+            log.debug("📊 Formats before response: {}", info.getFormats());
+            ApiResponseDto<VideoInfoDto> response = ApiResponseDto.success(info);
+            log.debug("📊 Response data formats: {}", response.getData().getFormats().size());
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             log.warn("❌ Unsupported URL: {}", url, e);
             return ResponseEntity.badRequest().body(ApiResponseDto.error("Unsupported URL: " + e.getMessage(), 400));
@@ -148,12 +151,11 @@ public class DownloadController {
         
         String clientIp = getClientIp(request);
         
-        // Check if file belongs to a task completed by current user
+        // Check if file belongs to a task completed by current user (optimized: check status first)
         java.util.List<TaskStatusDto> userTasks = queueService.getQueueStatus(clientIp);
         boolean hasAccess = userTasks.stream()
-                .anyMatch(task -> task.getFilename() != null && 
-                                 task.getFilename().equals(filename) && 
-                                 "completed".equals(task.getStatus()));
+                .filter(task -> "completed".equals(task.getStatus()))
+                .anyMatch(task -> task.getFilename() != null && task.getFilename().equals(filename));
         
         if (!hasAccess) {
             log.warn("🚫 Access denied | Filename: {} | IP: {}", filename, clientIp);
